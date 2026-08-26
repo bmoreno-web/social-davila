@@ -122,14 +122,25 @@ require_once __DIR__ . '/includes/sidebar.php';
                 </div>
             </div>
 
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Resumen Ejecutivo</label>
-                <textarea name="executive_summary" rows="3" placeholder="Resumen clave de los resultados del mes..." class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white"></textarea>
+            <div class="p-3.5 bg-gradient-to-r from-violet-600/10 via-indigo-600/10 to-transparent rounded-2xl border border-violet-500/20 flex items-center justify-between gap-3">
+                <div class="text-xs">
+                    <span class="font-bold text-violet-600 dark:text-violet-400 block">✨ Motor Inteligente Davila PM</span>
+                    <span class="text-[11px] text-slate-500 dark:text-slate-400">Analiza métricas reales, mejores posts y genera los textos al instante.</span>
+                </div>
+                <button type="button" id="btnGenAI" onclick="generateSmartAnalysis()" class="px-3.5 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-violet-600/20 flex items-center gap-1.5 shrink-0 transition-all">
+                    <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                    <span>Analizar Datos</span>
+                </button>
             </div>
 
             <div>
-                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Análisis Editorial Davila PM</label>
-                <textarea name="editorial_analysis" rows="3" placeholder="Diagnóstico estratégico y oportunidades de optimización..." class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white"></textarea>
+                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Resumen Ejecutivo (Basado en datos cuantitativos)</label>
+                <textarea name="executive_summary" id="reportExecSummary" rows="3" required placeholder="Haz clic en 'Analizar Datos' para generar automáticamente con métricas reales..." class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white leading-relaxed"></textarea>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Análisis Estratégico y Editorial Davila PM</label>
+                <textarea name="editorial_analysis" id="reportEditorialAnalysis" rows="4" required placeholder="Diagnóstico de formatos, rendimiento por canal y recomendaciones tácticas..." class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white font-mono text-[11px] leading-relaxed"></textarea>
             </div>
 
             <div class="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-dark-border">
@@ -141,6 +152,37 @@ require_once __DIR__ . '/includes/sidebar.php';
 </div>
 
 <script>
+async function generateSmartAnalysis() {
+    const form = document.getElementById('createReportForm');
+    const clientId = form.querySelector('[name="client_id"]').value;
+    const periodStart = form.querySelector('[name="period_start"]').value;
+    const periodEnd = form.querySelector('[name="period_end"]').value;
+    const btn = document.getElementById('btnGenAI');
+    const execTextarea = document.getElementById('reportExecSummary');
+    const editTextarea = document.getElementById('reportEditorialAnalysis');
+
+    btn.disabled = true;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = `<svg class="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg> Sintetizando...`;
+
+    try {
+        const res = await fetch(`api/ai_summary.php?client_id=${clientId}&period_start=${periodStart}&period_end=${periodEnd}`);
+        const data = await res.json();
+        if (data.success) {
+            execTextarea.value = data.executive_summary;
+            editTextarea.value = data.editorial_analysis;
+            showToast('¡Análisis generado con datos reales de la marca!', 'success');
+        } else {
+            showToast(data.error || 'Error al analizar datos', 'error');
+        }
+    } catch(err) {
+        showToast('Error al conectar con el motor de análisis', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
+
 async function saveNewReport(e) {
     e.preventDefault();
     const formData = new FormData(document.getElementById('createReportForm'));

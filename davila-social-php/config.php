@@ -35,6 +35,9 @@ define('DB_PASS', '');
 define('METRICOOL_API_KEY', getenv('METRICOOL_API_KEY') ?: '');
 define('METRICOOL_API_BASE_URL', 'https://app.metricool.com/api');
 
+// Optional AI Synthesis API Key (Google Gemini)
+define('GEMINI_API_KEY', getenv('GEMINI_API_KEY') ?: '');
+
 // Security & Auth
 define('JWT_SECRET', 'davila_pm_social_secret_key_2026_sg_secure');
 define('DEFAULT_ADMIN_EMAIL', 'admin@davila.com');
