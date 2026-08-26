@@ -75,3 +75,82 @@ html:not(.dark) .glass-header {
 .modal-content {
   transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out;
 }
+
+/* ==========================================================================
+   Print / PDF Export Optimization (Hides all navigation, sidebars and toolbars)
+   ========================================================================== */
+@media print {
+  /* 1. Hide all non-printable elements */
+  aside,
+  header,
+  .no-print,
+  .action-bar,
+  #toastContainer,
+  button,
+  .theme-toggle,
+  nav {
+    display: none !important;
+  }
+
+  /* 2. Reset backgrounds and text for crystal clear print */
+  html, body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 11pt !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    background: transparent !important;
+    overflow: visible !important;
+  }
+
+  .max-w-5xl {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    space-y: 20px !important;
+  }
+
+  /* 3. High-definition cards and borders */
+  .glass-panel {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    color: #0f172a !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 16px !important;
+  }
+
+  .bg-slate-50, .bg-slate-900, .bg-slate-800, .dark\:bg-slate-900\/60, .dark\:bg-dark-card {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  /* 4. Text contrast fix */
+  .text-white, .dark\:text-white {
+    color: #0f172a !important;
+  }
+  .text-slate-300, .text-slate-400, .text-slate-500, .dark\:text-slate-300, .dark\:text-slate-400 {
+    color: #475569 !important;
+  }
+
+  /* 5. Force browser to preserve background graphics and colors */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  @page {
+    margin: 1.2cm;
+    size: A4 portrait;
+  }
+}
