@@ -123,8 +123,10 @@ if (!empty($geminiKey)) {
 
     $activeModel = Database::getSetting('gemini_model', '');
 
+    $modelsToTry = array_filter([$activeModel, 'models/gemini-3.6-flash', 'models/gemini-3.0-flash', 'models/gemini-2.0-flash', 'models/gemini-1.5-flash', 'models/gemini-1.5-pro']);
+
+    // If active model is not verified, get dynamic list from ListModels
     if (empty($activeModel)) {
-        // Query ListModels to find available model
         $listUrl = "https://generativelanguage.googleapis.com/v1beta/models?key=" . $geminiKey;
         $ch = curl_init($listUrl);
         curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 8]);
@@ -134,15 +136,16 @@ if (!empty($geminiKey)) {
         if (isset($listJson['models'])) {
             foreach ($listJson['models'] as $m) {
                 if (in_array('generateContent', $m['supportedGenerationMethods'] ?? [])) {
-                    $activeModel = $m['name'];
-                    break;
+                    $modelsToTry[] = $m['name'];
                 }
             }
         }
     }
 
-    if (!empty($activeModel)) {
-        $modelPath = (strpos($activeModel, 'models/') === 0) ? $activeModel : "models/{$activeModel}";
+    $modelsToTry = array_unique($modelsToTry);
+
+    foreach ($modelsToTry as $candidateModel) {
+        $modelPath = (strpos($candidateModel, 'models/') === 0) ? $candidateModel : "models/{$candidateModel}";
         $ch = curl_init("https://generativelanguage.googleapis.com/v1beta/{$modelPath}:generateContent?key=" . $geminiKey);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
@@ -164,6 +167,7 @@ if (!empty($geminiKey)) {
             if ($aiText) {
                 $parsed = json_decode($aiText, true);
                 if (isset($parsed['executive_summary']) && isset($parsed['editorial_analysis'])) {
+                    Database::setSetting('gemini_model', $modelPath);
                     echo json_encode([
                         'success' => true,
                         'executive_summary' => $parsed['executive_summary'],

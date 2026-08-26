@@ -83,44 +83,59 @@ if ($method === 'POST') {
             exit;
         }
 
-        // Sort to prioritize flash / pro models
+        // Sort prioritizing newer flash versions (gemini-3.6-flash, gemini-3.0-flash, etc.)
         usort($supportedModels, function($a, $b) {
-            if (strpos($a, 'flash') !== false && strpos($b, 'flash') === false) return -1;
-            if (strpos($b, 'flash') !== false && strpos($a, 'flash') === false) return 1;
+            // Check for explicit 3.6 or 3.0 or higher
+            preg_match('/(\d+(?:\.\d+)?)/', $a, $mA);
+            preg_match('/(\d+(?:\.\d+)?)/', $b, $mB);
+            $vA = isset($mA[1]) ? (float)$mA[1] : 0;
+            $vB = isset($mB[1]) ? (float)$mB[1] : 0;
+            if ($vB !== $vA) {
+                return ($vB > $vA) ? 1 : -1;
+            }
             return 0;
         });
 
-        $chosenModel = $supportedModels[0]; // e.g. "models/gemini-2.0-flash"
+        // 3. Test generateContent in a loop over verified models until one responds with HTTP 200 OK
+        $workingModel = null;
+        $lastErr = '';
 
-        // 3. Test generateContent with the exact model verified by Google
-        $genUrl = "https://generativelanguage.googleapis.com/v1beta/{$chosenModel}:generateContent?key=" . $apiKey;
-        $ch2 = curl_init($genUrl);
-        curl_setopt_array($ch2, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_POST => true,
-            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-            CURLOPT_POSTFIELDS => json_encode([
-                'contents' => [['parts' => [['text' => 'Responde solo: OK']]]]
-            ]),
-            CURLOPT_TIMEOUT => 10
-        ]);
-        $genResponse = curl_exec($ch2);
-        $genHttpCode = curl_getinfo($ch2, CURLINFO_HTTP_CODE);
-        curl_close($ch2);
+        foreach ($supportedModels as $candidateModel) {
+            $genUrl = "https://generativelanguage.googleapis.com/v1beta/{$candidateModel}:generateContent?key=" . $apiKey;
+            $ch2 = curl_init($genUrl);
+            curl_setopt_array($ch2, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_POST => true,
+                CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+                CURLOPT_POSTFIELDS => json_encode([
+                    'contents' => [['parts' => [['text' => 'Responde solo: OK']]]]
+                ]),
+                CURLOPT_TIMEOUT => 6
+            ]);
+            $genResponse = curl_exec($ch2);
+            $genHttpCode = curl_getinfo($ch2, CURLINFO_HTTP_CODE);
+            curl_close($ch2);
 
-        $genJson = json_decode($genResponse, true);
-        if ($genHttpCode === 200 && isset($genJson['candidates'][0]['content']['parts'][0]['text'])) {
-            $displayName = str_replace('models/', '', $chosenModel);
+            $genJson = json_decode($genResponse, true);
+            if ($genHttpCode === 200 && isset($genJson['candidates'][0]['content']['parts'][0]['text'])) {
+                $workingModel = $candidateModel;
+                break;
+            } else {
+                $lastErr = $genJson['error']['message'] ?? "HTTP {$genHttpCode}";
+            }
+        }
+
+        if ($workingModel) {
+            $displayName = str_replace('models/', '', $workingModel);
             Database::setSetting('gemini_api_key', $apiKey);
-            Database::setSetting('gemini_model', $chosenModel);
+            Database::setSetting('gemini_model', $workingModel);
             echo json_encode([
                 'success' => true,
                 'model' => $displayName,
                 'message' => "¡Conexión exitosa con Google Gemini ({$displayName})! La clave es válida y está activa."
             ]);
         } else {
-            $err = $genJson['error']['message'] ?? "Error al generar contenido con {$chosenModel}";
-            echo json_encode(['success' => false, 'error' => $err]);
+            echo json_encode(['success' => false, 'error' => $lastErr ?: 'No se encontró un modelo disponible para generateContent']);
         }
         exit;
     }
