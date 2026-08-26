@@ -92,8 +92,11 @@ require_once __DIR__ . '/includes/sidebar.php';
                         📊
                     </div>
                     <div>
-                        <h2 class="text-base font-bold text-slate-900 dark:text-white">API Oficial de Metricool</h2>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Sincronización de publicaciones, métricas y analítica social</p>
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-base font-bold text-slate-900 dark:text-white">API Oficial de Metricool</h2>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-500">Live Sync</span>
+                        </div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Sincronización directa de publicaciones, imágenes y métricas en tiempo real</p>
                     </div>
                 </div>
                 <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-500 flex items-center gap-1.5">
@@ -101,16 +104,36 @@ require_once __DIR__ . '/includes/sidebar.php';
                 </span>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-dark-border text-xs space-y-1">
-                    <span class="text-slate-400 font-semibold block">Endpoint Base API:</span>
-                    <code class="font-mono text-violet-600 dark:text-violet-400 font-bold"><?= METRICOOL_API_BASE_URL ?></code>
+            <form id="metricoolForm" onsubmit="saveMetricoolSettings(event)" class="space-y-4 pt-2">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            Metricool User Token (API Token)
+                        </label>
+                        <a href="https://app.metricool.com" target="_blank" class="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
+                            <span>Obtener Token en Metricool &rarr; Cuenta &rarr; API</span>
+                            <i data-lucide="external-link" class="w-3 h-3"></i>
+                        </a>
+                    </div>
+                    <div class="relative">
+                        <input type="password" name="metricool_api_key" id="metricoolApiKey" value="<?= htmlspecialchars($metricoolKey) ?>" placeholder="Ingresa tu User Token de Metricool..." 
+                            class="w-full pl-4 pr-24 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-mono text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <button type="button" onclick="togglePasswordVisibility('metricoolApiKey', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs font-semibold px-2 py-1">
+                            Ver
+                        </button>
+                    </div>
                 </div>
-                <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-dark-border text-xs space-y-1">
-                    <span class="text-slate-400 font-semibold block">Zona Horaria Oficial:</span>
-                    <span class="font-bold text-slate-800 dark:text-slate-200">America/Bogota (UTC-5)</span>
+
+                <div class="flex items-center justify-between pt-1">
+                    <div class="text-xs text-slate-500">
+                        Endpoint: <code class="font-mono text-blue-500"><?= METRICOOL_API_BASE_URL ?></code>
+                    </div>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-600/20 flex items-center gap-1.5 transition-all">
+                        <i data-lucide="save" class="w-3.5 h-3.5"></i>
+                        <span>Guardar Token de Metricool</span>
+                    </button>
                 </div>
-            </div>
+            </form>
         </div>
 
         <!-- 3. SYSTEM & ENVIRONMENT DIAGNOSTICS -->
@@ -164,6 +187,27 @@ async function saveSettings(e) {
         if (result.success) {
             showToast('Clave de Gemini guardada correctamente', 'success');
             document.getElementById('geminiTestStatus').innerHTML = '<span class="text-emerald-500 font-semibold flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Clave configurada</span>';
+        } else {
+            showToast(result.error || 'Error al guardar', 'error');
+        }
+    } catch (err) {
+        showToast('Error de conexión', 'error');
+    }
+}
+
+async function saveMetricoolSettings(e) {
+    e.preventDefault();
+    const metricoolToken = document.getElementById('metricoolApiKey').value.trim();
+    
+    try {
+        const res = await fetch('api/settings.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'save', metricool_api_key: metricoolToken })
+        });
+        const result = await res.json();
+        if (result.success) {
+            showToast('Token de Metricool guardado con éxito. Ahora la sincronización conectará en vivo.', 'success');
         } else {
             showToast(result.error || 'Error al guardar', 'error');
         }
