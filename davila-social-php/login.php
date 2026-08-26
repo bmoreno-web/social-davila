@@ -117,13 +117,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- 1-Click Demo Credentials Quick Fill -->
         <div class="mt-8 pt-6 border-t border-slate-100 dark:border-dark-border">
-            <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-3 text-center uppercase tracking-wider">Acceso Rápido de Prueba</p>
+            <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-3 text-center uppercase tracking-wider">Acceso Rápido de Prueba (Pass: davila2026!)</p>
             <div class="grid grid-cols-2 gap-2">
-                <button type="button" onclick="fillCreds('admin@davila.com', 'admin123456')" class="px-3 py-2 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-800 hover:bg-violet-600 hover:text-white dark:hover:bg-violet-600 text-slate-700 dark:text-slate-300 transition-colors text-center border border-slate-200 dark:border-slate-700">
+                <button type="button" onclick="fillCreds('admin@davilapm.com', 'davila2026!')" class="px-3 py-2 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-800 hover:bg-violet-600 hover:text-white dark:hover:bg-violet-600 text-slate-700 dark:text-slate-300 transition-colors text-center border border-slate-200 dark:border-slate-700">
                     👑 Admin / Equipo
                 </button>
-                <button type="button" onclick="fillCreds('cliente@acesco.com', 'cliente123')" class="px-3 py-2 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-800 hover:bg-violet-600 hover:text-white dark:hover:bg-violet-600 text-slate-700 dark:text-slate-300 transition-colors text-center border border-slate-200 dark:border-slate-700">
-                    🏢 Portal Cliente
+                <button type="button" onclick="fillCreds('cliente@acesco.com', 'davila2026!')" class="px-3 py-2 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-800 hover:bg-violet-600 hover:text-white dark:hover:bg-violet-600 text-slate-700 dark:text-slate-300 transition-colors text-center border border-slate-200 dark:border-slate-700">
+                    🏢 Portal Acesco
                 </button>
             </div>
         </div>
