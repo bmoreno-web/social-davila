@@ -97,29 +97,36 @@ $brandName = $client['name'];
 $industry = $client['industry'] ?? 'su sector';
 
 // Format numbers nicely
-$reachFmt = number_format($totalReach);
-$impFmt = number_format($totalImpressions);
-$interFmt = number_format($totalInteractions);
-$likesFmt = number_format($totalLikes);
-$commFmt = number_format($totalComments);
-$savesFmt = number_format($totalSaves);
+// Format top posts context for AI
+$topPostsContext = "";
+foreach (array_slice($posts, 0, 4) as $idx => $tp) {
+    $num = $idx + 1;
+    $cap = addslashes(substr($tp['caption'] ?? '', 0, 100));
+    $topPostsContext .= "- Post #{$num} ({$tp['platform']} {$tp['post_type']}): '{$cap}...' -> ER: {$tp['engagement_rate']}%, Likes: {$tp['likes']}, Comentarios: {$tp['comments']}, Alcance: {$tp['reach']}\n";
+}
 
 // 3. Optional Gemini API Engine if configured in Admin or Config
 $geminiKey = Database::getSetting('gemini_api_key', defined('GEMINI_API_KEY') ? GEMINI_API_KEY : '');
 if (!empty($geminiKey)) {
-    $prompt = "Eres el Director de Estrategia y Analítica Digital de la agencia Davila PM. Genera un análisis profesional en español basado estrictamente en estas métricas reales:\n\n" .
-        "Marca: {$brandName}\n" .
-        "Sector: {$industry}\n" .
-        "Total Publicaciones: {$totalPosts}\n" .
-        "Impresiones: {$impFmt}\n" .
-        "Alcance Neto: {$reachFmt}\n" .
-        "Interacciones Totales: {$interFmt} (Likes: {$likesFmt}, Comentarios: {$commFmt}, Guardados: {$savesFmt})\n" .
-        "Engagement Rate Promedio: {$avgEngagement}%\n" .
-        "Mejor Formato: {$bestFormat} (ER: {$bestFormatAvg}%)\n" .
-        ($topPost1 ? "Publicación Destacada: '{$topPost1['caption']}' con {$topPost1['engagement_rate']}% ER y {$topPost1['reach']} alcance.\n" : "") .
-        "\nResponde en formato JSON con exactamente dos campos:\n" .
-        "1. executive_summary: Un párrafo ejecutivo denso con los datos y porcentajes cuantitativos exactos.\n" .
-        "2. editorial_analysis: Un análisis estratégico editorial Davila PM estructurado en 3 puntos (Rendimiento por formato, Calidad de interacción, y Recomendaciones tácticas accionables con números).";
+    $prompt = "Eres el Director General de Estrategia Digital de la prestigiosa agencia Davila PM. Redacta un informe ejecutivo y análisis editorial de nivel directivo para el cliente {$brandName} ({$industry}) analizando sus métricas reales de redes sociales en el período evaluado:\n\n" .
+        "DATOS CUANTITATIVOS REALES:\n" .
+        "- Publicaciones Analizadas: {$totalPosts} posts\n" .
+        "- Redes Activas: {$platformList}\n" .
+        "- Impresiones Totales: {$impFmt}\n" .
+        "- Alcance Neto Único: {$reachFmt} personas\n" .
+        "- Interacciones Totales: {$interFmt} (Likes: {$likesFmt}, Comentarios: {$commFmt}, Guardados: {$savesFmt})\n" .
+        "- Engagement Rate (ER) Promedio: {$avgEngagement}%\n" .
+        "- Formato Más Eficiente: {$bestFormat} con {$bestFormatAvg}% ER promedio\n\n" .
+        "PUBLICACIONES MÁS DESTACADAS:\n" .
+        $topPostsContext .
+        "\nINSTRUCCIONES DE FORMATO:\n" .
+        "Genera una respuesta en formato JSON con exactamente dos propiedades:\n" .
+        "1. 'executive_summary': Un párrafo ejecutivo denso, elegante y cuantitativo que cite las cifras clave de impresiones, alcance neto, interacciones y el formato ganador.\n" .
+        "2. 'editorial_analysis': Un diagnóstico estratégico estructurado en formato Markdown profesional con 3 secciones claras:\n" .
+        "   ### 1. Balance de Formatos y Retención Audiovisual (analiza por qué el formato ganador superó al resto con cifras).\n" .
+        "   ### 2. Calidad de Interacción y Madurez de Comunidad (analiza el ratio de guardados y comentarios técnicos).\n" .
+        "   ### 3. Plan Táctico de Optimización Davila PM (3 recomendaciones específicas y accionables para el próximo ciclo con metas cuantificables).\n\n" .
+        "Evita textos genéricos o clichés. Usa un tono de consultoría de negocios de alto nivel citando los números exactos.";
 
     $activeModel = Database::getSetting('gemini_model', '');
 
