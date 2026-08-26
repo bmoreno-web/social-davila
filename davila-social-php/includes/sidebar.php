@@ -24,7 +24,7 @@ $isClient = $currentUser && $currentUser['role'] === 'CLIENT';
             </a>
 
             <a href="clientes.php" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all <?= $currentPage === 'clientes.php' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/25' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-hover hover:text-slate-900 dark:hover:text-white' ?>">
-                <i data-lucide="users" class="w-4 h-4"></i>
+                <i data-lucide="building-2" class="w-4 h-4"></i>
                 <span>Clientes y Marcas</span>
             </a>
 
@@ -38,9 +38,19 @@ $isClient = $currentUser && $currentUser['role'] === 'CLIENT';
                 <span>Recomendaciones</span>
             </a>
 
+            <a href="usuarios.php" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all <?= $currentPage === 'usuarios.php' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/25' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-hover hover:text-slate-900 dark:hover:text-white' ?>">
+                <i data-lucide="user-cog" class="w-4 h-4"></i>
+                <span>Gestión Usuarios</span>
+            </a>
+
             <a href="auditoria.php" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all <?= $currentPage === 'auditoria.php' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/25' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-hover hover:text-slate-900 dark:hover:text-white' ?>">
                 <i data-lucide="history" class="w-4 h-4"></i>
                 <span>Auditoría</span>
+            </a>
+
+            <a href="ajustes.php" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all <?= $currentPage === 'ajustes.php' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/25' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-hover hover:text-slate-900 dark:hover:text-white' ?>">
+                <i data-lucide="settings" class="w-4 h-4"></i>
+                <span>Ajustes & API</span>
             </a>
         <?php else: ?>
             <a href="portal.php" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all <?= $currentPage === 'portal.php' ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/25' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-hover hover:text-slate-900 dark:hover:text-white' ?>">
