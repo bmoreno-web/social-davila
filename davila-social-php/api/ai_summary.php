@@ -121,33 +121,40 @@ if (!empty($geminiKey)) {
         "1. executive_summary: Un párrafo ejecutivo denso con los datos y porcentajes cuantitativos exactos.\n" .
         "2. editorial_analysis: Un análisis estratégico editorial Davila PM estructurado en 3 puntos (Rendimiento por formato, Calidad de interacción, y Recomendaciones tácticas accionables con números).";
 
-    $ch = curl_init("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" . $geminiKey);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_POST => true,
-        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-        CURLOPT_POSTFIELDS => json_encode([
-            'contents' => [['parts' => [['text' => $prompt]]]],
-            'generationConfig' => ['response_mime_type' => 'application/json']
-        ]),
-        CURLOPT_TIMEOUT => 10
-    ]);
-    $response = curl_exec($ch);
-    curl_close($ch);
+    $preferredModel = Database::getSetting('gemini_model', 'gemini-2.0-flash');
+    $modelsToTry = array_unique([$preferredModel, 'gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro']);
 
-    if ($response) {
-        $json = json_decode($response, true);
-        $aiText = $json['candidates'][0]['content']['parts'][0]['text'] ?? null;
-        if ($aiText) {
-            $parsed = json_decode($aiText, true);
-            if (isset($parsed['executive_summary']) && isset($parsed['editorial_analysis'])) {
-                echo json_encode([
-                    'success' => true,
-                    'executive_summary' => $parsed['executive_summary'],
-                    'editorial_analysis' => $parsed['editorial_analysis'],
-                    'source' => 'gemini_ai'
-                ]);
-                exit;
+    foreach ($modelsToTry as $model) {
+        $ch = curl_init("https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key=" . $geminiKey);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+            CURLOPT_POSTFIELDS => json_encode([
+                'contents' => [['parts' => [['text' => $prompt]]]],
+                'generationConfig' => ['response_mime_type' => 'application/json']
+            ]),
+            CURLOPT_TIMEOUT => 12
+        ]);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode === 200 && $response) {
+            $json = json_decode($response, true);
+            $aiText = $json['candidates'][0]['content']['parts'][0]['text'] ?? null;
+            if ($aiText) {
+                $parsed = json_decode($aiText, true);
+                if (isset($parsed['executive_summary']) && isset($parsed['editorial_analysis'])) {
+                    echo json_encode([
+                        'success' => true,
+                        'executive_summary' => $parsed['executive_summary'],
+                        'editorial_analysis' => $parsed['editorial_analysis'],
+                        'model_used' => $model,
+                        'source' => 'gemini_ai'
+                    ]);
+                    exit;
+                }
             }
         }
     }

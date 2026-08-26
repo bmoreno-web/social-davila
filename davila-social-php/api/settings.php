@@ -44,36 +44,61 @@ if ($method === 'POST') {
             exit;
         }
 
-        // Test call to Gemini 1.5 Flash
-        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" . $apiKey;
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_POST => true,
-            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-            CURLOPT_POSTFIELDS => json_encode([
-                'contents' => [['parts' => [['text' => 'Responde solo la palabra: OK']]]]
-            ]),
-            CURLOPT_TIMEOUT => 8
-        ]);
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlError = curl_error($ch);
-        curl_close($ch);
+        // Candidate model endpoints to test in order of preference
+        $modelsToTry = [
+            'gemini-2.0-flash',
+            'gemini-1.5-flash-latest',
+            'gemini-1.5-flash',
+            'gemini-1.5-pro',
+            'gemini-pro'
+        ];
 
-        if ($curlError) {
-            echo json_encode(['success' => false, 'error' => 'Error de red: ' . $curlError]);
-            exit;
+        $success = false;
+        $activeModelName = '';
+        $lastError = '';
+
+        foreach ($modelsToTry as $model) {
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key=" . $apiKey;
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_POST => true,
+                CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+                CURLOPT_POSTFIELDS => json_encode([
+                    'contents' => [['parts' => [['text' => 'Responde solo: OK']]]]
+                ]),
+                CURLOPT_TIMEOUT => 8
+            ]);
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
+
+            if ($curlError) {
+                $lastError = 'Error de red cURL: ' . $curlError;
+                continue;
+            }
+
+            $json = json_decode($response, true);
+            if ($httpCode === 200 && isset($json['candidates'][0]['content']['parts'][0]['text'])) {
+                $success = true;
+                $activeModelName = $model;
+                break;
+            } else {
+                $lastError = $json['error']['message'] ?? "HTTP {$httpCode}";
+            }
         }
 
-        $json = json_decode($response, true);
-        if ($httpCode === 200 && isset($json['candidates'][0]['content']['parts'][0]['text'])) {
-            // Save automatically on successful test
+        if ($success) {
             Database::setSetting('gemini_api_key', $apiKey);
-            echo json_encode(['success' => true, 'message' => '¡Conexión exitosa con Google Gemini 1.5 Flash! La clave es válida y está activa.']);
+            Database::setSetting('gemini_model', $activeModelName);
+            echo json_encode([
+                'success' => true, 
+                'model' => $activeModelName,
+                'message' => "¡Conexión exitosa con Google Gemini ({$activeModelName})! La clave es válida y está activa."
+            ]);
         } else {
-            $errMsg = $json['error']['message'] ?? 'Clave de API inválida o cuota superada (HTTP ' . $httpCode . ')';
-            echo json_encode(['success' => false, 'error' => $errMsg]);
+            echo json_encode(['success' => false, 'error' => $lastError]);
         }
         exit;
     }
