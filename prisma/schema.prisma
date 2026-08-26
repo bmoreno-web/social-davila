@@ -1,0 +1,162 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String      @id @default(cuid())
+  name         String
+  email        String      @unique
+  passwordHash String
+  role         String      @default("TEAM") // ADMIN, TEAM, CLIENT
+  clientId     String?     // If role === CLIENT, restricted to this client
+  client       Client?     @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  avatar       String?
+  active       Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  auditLogs    AuditLog[]
+  reportsCreated Report[]  @relation("ReportCreator")
+}
+
+model Client {
+  id                String             @id @default(cuid())
+  name              String
+  slug              String             @unique
+  logo              String?
+  industry          String?
+  contactName       String?
+  contactEmail      String?
+  metricoolBlogId   String?            // Metricool blogId / brand ID
+  metricoolUserId   String?            // Metricool owner userId
+  metricoolHash     String?
+  lastSyncAt        DateTime?
+  active            Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  users             User[]
+  socialConnections SocialConnection[]
+  reports           Report[]
+  recommendations   Recommendation[]
+  posts             ReportPost[]
+  syncLogs          SyncLog[]
+}
+
+model SocialConnection {
+  id                   String   @id @default(cuid())
+  clientId             String
+  client               Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  platform             String   // INSTAGRAM, FACEBOOK, TIKTOK, LINKEDIN, YOUTUBE, PINTEREST, THREADS, X
+  accountName          String?
+  accountUsername      String?
+  accountPicture       String?
+  externalId           String?
+  active               Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@unique([clientId, platform])
+}
+
+model Report {
+  id                 String           @id @default(cuid())
+  clientId           String
+  client             Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  title              String
+  periodStart        DateTime
+  periodEnd          DateTime
+  status             String           @default("DRAFT") // DRAFT, IN_REVIEW, APPROVED, PUBLISHED, ARCHIVED
+  executiveSummary   String?
+  editorialAnalysis  String?          // "Análisis Davila PM" editorial text
+  createdById        String?
+  creator            User?            @relation("ReportCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  publishedAt        DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  metrics            ReportMetric[]
+  posts              ReportPost[]
+  recommendations    Recommendation[]
+}
+
+model ReportMetric {
+  id               String   @id @default(cuid())
+  reportId         String
+  report           Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  platform         String   // ALL, INSTAGRAM, FACEBOOK, etc.
+  metricKey        String   // followers, reach, impressions, interactions, engagement, posts_count
+  currentValue     Float
+  previousValue    Float?
+  percentageChange Float?
+  createdAt        DateTime @default(now())
+}
+
+model ReportPost {
+  id             String    @id @default(cuid())
+  reportId       String?
+  report         Report?   @relation(fields: [reportId], references: [id], onDelete: SetNull)
+  clientId       String
+  client         Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  platform       String    // INSTAGRAM, FACEBOOK, TIKTOK, LINKEDIN, YOUTUBE
+  externalPostId String?
+  publishedAt    DateTime
+  mediaUrl       String?
+  thumbnailUrl   String?
+  caption        String?
+  postType       String?   // image, video, reel, carousel, story, link
+  likes          Int       @default(0)
+  comments       Int       @default(0)
+  shares         Int       @default(0)
+  saves          Int       @default(0)
+  reach          Int       @default(0)
+  impressions    Int       @default(0)
+  engagementRate Float     @default(0)
+  permalink      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model Recommendation {
+  id          String   @id @default(cuid())
+  reportId    String?
+  report      Report?  @relation(fields: [reportId], references: [id], onDelete: SetNull)
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  category    String   // CONTENIDO, PAUTA, ESTRATEGIA, FORMATO, OPTIMIZACION
+  priority    String   // ALTA, MEDIA, BAJA
+  title       String
+  description String
+  status      String   @default("PENDIENTE") // PENDIENTE, EN_PROGRESO, IMPLEMENTADA
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userName     String?
+  userEmail    String?
+  action       String   // CREATE, UPDATE, DELETE, PUBLISH, SYNC, LOGIN
+  resourceType String   // CLIENT, REPORT, RECOMMENDATION, METRICOOL_SYNC, AUTH
+  resourceId   String?
+  details      String?
+  createdAt    DateTime @default(now())
+}
+
+model SyncLog {
+  id         String   @id @default(cuid())
+  clientId   String
+  client     Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  status     String   // SUCCESS, ERROR, WARNING
+  itemsCount Int      @default(0)
+  error      String?
+  durationMs Int      @default(0)
+  createdAt  DateTime @default(now())
+}

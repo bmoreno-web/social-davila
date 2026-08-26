@@ -1,0 +1,62 @@
+import React from 'react';
+import { redirect } from 'next/navigation';
+import Link from 'next/link';
+import { getSession } from '@/lib/auth/session';
+import { LogOut, BarChart3, ShieldCheck, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+export default async function PortalLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const session = await getSession();
+
+  if (!session) {
+    redirect('/login');
+  }
+
+  return (
+    <div className="min-h-screen bg-[#07090e] text-zinc-100 flex flex-col">
+      {/* Client Portal Header */}
+      <header className="h-16 px-6 md:px-10 border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-md flex items-center justify-between sticky top-0 z-30">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center text-white shadow-md shadow-purple-600/30">
+            <span className="font-bold text-sm">D</span>
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-sm tracking-tight text-white font-display">DAVILA PM</span>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                PORTAL CLIENTE
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4 text-xs">
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300">
+            <span className="h-2 w-2 rounded-full bg-emerald-400" />
+            <span>{session.name}</span>
+          </div>
+
+          <form action="/api/auth/logout" method="POST">
+            <Button variant="ghost" size="sm" type="submit" className="h-8 text-xs text-zinc-400 hover:text-red-400">
+              <LogOut className="h-3.5 w-3.5 mr-1.5" /> Salir
+            </Button>
+          </form>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-1 p-6 md:p-10 max-w-6xl w-full mx-auto">
+        {children}
+      </main>
+
+      {/* Footer */}
+      <footer className="py-6 border-t border-zinc-800/80 text-center text-xs text-zinc-500">
+        © 2026 Davila PM — Transformación Digital & Estrategia de Medios
+      </footer>
+    </div>
+  );
+}
