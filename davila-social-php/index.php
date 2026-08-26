@@ -199,14 +199,20 @@ require_once __DIR__ . '/includes/sidebar.php';
                 <?php else: ?>
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                         <?php foreach ($posts as $p): ?>
-                            <div class="bg-slate-50 dark:bg-slate-900/60 rounded-xl overflow-hidden border border-slate-200 dark:border-dark-border flex flex-col group">
+                            <?php 
+                                $imgUrl = !empty($p['media_url']) ? $p['media_url'] : (!empty($p['thumbnail_url']) ? $p['thumbnail_url'] : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80');
+                            ?>
+                            <div class="bg-slate-50 dark:bg-slate-900/60 rounded-xl overflow-hidden border border-slate-200 dark:border-dark-border flex flex-col group hover:border-violet-500/40 transition-all">
                                 <div class="h-36 relative overflow-hidden bg-slate-800">
-                                    <img src="<?= htmlspecialchars($p['media_url'] ?? $p['thumbnail_url']) ?>" alt="Post Thumbnail" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                    <img src="<?= htmlspecialchars($imgUrl) ?>" 
+                                         alt="Post Thumbnail" 
+                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80';">
                                     <span class="absolute top-2 left-2 px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-black/60 text-white backdrop-blur">
-                                        <?= htmlspecialchars($p['platform']) ?>
+                                        <?= htmlspecialchars($p['platform'] ?? 'INSTAGRAM') ?>
                                     </span>
                                     <span class="absolute bottom-2 right-2 px-2 py-0.5 rounded text-[10px] font-bold bg-violet-600 text-white">
-                                        <?= htmlspecialchars($p['post_type']) ?>
+                                        <?= htmlspecialchars($p['post_type'] ?? 'Post') ?>
                                     </span>
                                 </div>
                                 <div class="p-3.5 flex-1 flex flex-col justify-between">

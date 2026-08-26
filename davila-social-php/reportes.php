@@ -51,12 +51,27 @@ require_once __DIR__ . '/includes/sidebar.php';
                                 <span class="text-xs text-slate-400"><?= date('d/m/Y', strtotime($r['created_at'])) ?></span>
                             </div>
 
-                            <h2 class="text-base font-bold text-slate-900 dark:text-white leading-tight mb-2">
-                                <?= htmlspecialchars($r['title']) ?>
-                            </h2>
-                            <p class="text-xs text-violet-600 dark:text-violet-400 font-semibold mb-3">
-                                <?= htmlspecialchars($r['client_name']) ?>
-                            </p>
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="relative w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-slate-200 dark:border-dark-border shadow-sm bg-slate-800">
+                                    <?php if (!empty($r['client_logo'])): ?>
+                                        <img src="<?= htmlspecialchars($r['client_logo']) ?>" 
+                                             alt="<?= htmlspecialchars($r['client_name']) ?>" 
+                                             class="w-full h-full object-cover"
+                                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <?php endif; ?>
+                                    <div class="<?= empty($r['client_logo']) ? 'flex' : 'hidden' ?> w-full h-full bg-gradient-to-tr from-violet-600 to-indigo-600 items-center justify-center text-white font-bold text-[10px]">
+                                        <?= strtoupper(substr($r['client_name'], 0, 2)) ?>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h2 class="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                                        <?= htmlspecialchars($r['title']) ?>
+                                    </h2>
+                                    <p class="text-[11px] text-violet-600 dark:text-violet-400 font-semibold">
+                                        <?= htmlspecialchars($r['client_name']) ?>
+                                    </p>
+                                </div>
+                            </div>
 
                             <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-3 mb-4 leading-relaxed">
                                 <?= htmlspecialchars($r['executive_summary'] ?? 'Sin resumen ejecutivo generado.') ?>

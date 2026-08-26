@@ -38,7 +38,17 @@ require_once __DIR__ . '/includes/sidebar.php';
                     <div>
                         <div class="flex items-start justify-between gap-4 mb-4">
                             <div class="flex items-center gap-3">
-                                <img src="<?= htmlspecialchars($c['logo']) ?>" alt="Logo" class="w-12 h-12 rounded-xl object-cover border border-slate-200 dark:border-dark-border shadow-sm">
+                                <div class="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-slate-200 dark:border-dark-border shadow-sm bg-slate-800">
+                                    <?php if (!empty($c['logo'])): ?>
+                                        <img src="<?= htmlspecialchars($c['logo']) ?>" 
+                                             alt="<?= htmlspecialchars($c['name']) ?>" 
+                                             class="w-full h-full object-cover"
+                                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <?php endif; ?>
+                                    <div class="<?= empty($c['logo']) ? 'flex' : 'hidden' ?> w-full h-full bg-gradient-to-tr from-violet-600 via-indigo-600 to-amber-500 items-center justify-center text-white font-black text-sm">
+                                        <?= strtoupper(substr($c['name'], 0, 2)) ?>
+                                    </div>
+                                </div>
                                 <div>
                                     <h2 class="text-base font-bold text-slate-900 dark:text-white leading-tight">
                                         <?= htmlspecialchars($c['name']) ?>
