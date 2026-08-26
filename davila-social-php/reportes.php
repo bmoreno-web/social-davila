@@ -7,10 +7,10 @@ require_once __DIR__ . '/auth.php';
 $user = Auth::requireAdminOrTeam();
 $db = Database::getConnection();
 
-// Fetch reports with client data
-$reports = $db->query("SELECT r.*, c.name as client_name, c.logo as client_logo 
+// Fetch reports with client data (LEFT JOIN to prevent hiding any reports)
+$reports = $db->query("SELECT r.*, COALESCE(c.name, 'Marca General') as client_name, c.logo as client_logo 
     FROM reports r 
-    JOIN clients c ON r.client_id = c.id 
+    LEFT JOIN clients c ON r.client_id = c.id 
     ORDER BY r.created_at DESC")->fetchAll();
 
 $clients = $db->query("SELECT * FROM clients WHERE active = 1 ORDER BY name ASC")->fetchAll();

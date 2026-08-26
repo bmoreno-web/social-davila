@@ -12,9 +12,9 @@ if (!$reportId) {
     exit;
 }
 
-$stmt = $db->prepare("SELECT r.*, c.name as client_name, c.logo as client_logo, c.industry 
+$stmt = $db->prepare("SELECT r.*, COALESCE(c.name, 'Marca General') as client_name, c.logo as client_logo, c.industry 
     FROM reports r 
-    JOIN clients c ON r.client_id = c.id 
+    LEFT JOIN clients c ON r.client_id = c.id 
     WHERE r.id = ?");
 $stmt->execute([$reportId]);
 $report = $stmt->fetch();
