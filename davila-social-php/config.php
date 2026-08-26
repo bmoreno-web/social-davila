@@ -21,15 +21,15 @@ define('APP_VERSION', '1.0.0');
 define('APP_URL', (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . ($_SERVER['HTTP_HOST'] ?? 'localhost'));
 define('BASE_PATH', __DIR__);
 
-// Database Configuration (Default: SQLite for 0-configuration on SiteGround)
-define('DB_TYPE', 'sqlite'); // 'sqlite' or 'mysql'
+// Database Configuration (Configured for SiteGround MySQL Database)
+define('DB_TYPE', 'mysql'); // 'sqlite' or 'mysql'
 define('DB_FILE', BASE_PATH . '/data/database.sqlite');
 
-// Optional MySQL credentials if DB_TYPE is set to 'mysql'
+// SiteGround MySQL Credentials
 define('DB_HOST', 'localhost');
-define('DB_NAME', 'davila_social');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+define('DB_NAME', 'dbvgf9bsyww9bg');
+define('DB_USER', 'ux3gjb13b2spu');
+define('DB_PASS', 'Moremore2026');
 
 // Metricool API Default Configuration
 define('METRICOOL_API_KEY', getenv('METRICOOL_API_KEY') ?: '');

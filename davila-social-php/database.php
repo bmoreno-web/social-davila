@@ -33,6 +33,16 @@ class Database {
                     self::$instance->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
                     self::$instance->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
                     self::initSchema(self::$instance);
+                    
+                    // Auto-seed if MySQL database is freshly created and empty
+                    try {
+                        $userCount = (int)self::$instance->query("SELECT count(*) FROM users")->fetchColumn();
+                        if ($userCount === 0) {
+                            self::seedDatabase(self::$instance);
+                        }
+                    } catch (Exception $e) {
+                        self::seedDatabase(self::$instance);
+                    }
                 }
             } catch (PDOException $e) {
                 die("Error de conexión a la base de datos: " . $e->getMessage());
@@ -67,8 +77,13 @@ class Database {
         $saved = false;
         try {
             $db = self::getConnection();
-            $stmt = $db->prepare("INSERT INTO settings (setting_key, setting_value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) 
-                ON CONFLICT(setting_key) DO UPDATE SET setting_value = excluded.setting_value, updated_at = CURRENT_TIMESTAMP");
+            if (defined('DB_TYPE') && DB_TYPE === 'mysql') {
+                $stmt = $db->prepare("INSERT INTO settings (setting_key, setting_value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) 
+                    ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = CURRENT_TIMESTAMP");
+            } else {
+                $stmt = $db->prepare("INSERT INTO settings (setting_key, setting_value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) 
+                    ON CONFLICT(setting_key) DO UPDATE SET setting_value = excluded.setting_value, updated_at = CURRENT_TIMESTAMP");
+            }
             $saved = $stmt->execute([$key, $value]);
         } catch (Exception $e) {}
 
@@ -94,136 +109,136 @@ class Database {
     }
 
     public static function initSchema(PDO $db): void {
-        $queries = "
-        CREATE TABLE IF NOT EXISTS users (
-            id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            email TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            role TEXT DEFAULT 'TEAM',
-            client_id TEXT,
-            avatar TEXT,
-            active INTEGER DEFAULT 1,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
+        $isMysql = (defined('DB_TYPE') && DB_TYPE === 'mysql');
+        
+        $tableQueries = [
+            "CREATE TABLE IF NOT EXISTS users (
+                id VARCHAR(191) PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                email VARCHAR(191) UNIQUE NOT NULL,
+                password_hash VARCHAR(255) NOT NULL,
+                role VARCHAR(50) DEFAULT 'TEAM',
+                client_id VARCHAR(191),
+                avatar VARCHAR(500),
+                active INT DEFAULT 1,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )",
 
-        CREATE TABLE IF NOT EXISTS clients (
-            id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            slug TEXT UNIQUE NOT NULL,
-            logo TEXT,
-            industry TEXT,
-            contact_name TEXT,
-            contact_email TEXT,
-            metricool_blog_id TEXT,
-            metricool_user_id TEXT,
-            metricool_hash TEXT,
-            last_sync_at DATETIME,
-            active INTEGER DEFAULT 1,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
+            "CREATE TABLE IF NOT EXISTS clients (
+                id VARCHAR(191) PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                slug VARCHAR(191) UNIQUE NOT NULL,
+                logo VARCHAR(500),
+                industry VARCHAR(255),
+                contact_name VARCHAR(255),
+                contact_email VARCHAR(255),
+                metricool_blog_id VARCHAR(100),
+                metricool_user_id VARCHAR(100),
+                metricool_hash VARCHAR(255),
+                last_sync_at DATETIME,
+                active INT DEFAULT 1,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )",
 
-        CREATE TABLE IF NOT EXISTS social_connections (
-            id TEXT PRIMARY KEY,
-            client_id TEXT NOT NULL,
-            platform TEXT NOT NULL,
-            account_name TEXT,
-            account_username TEXT,
-            account_picture TEXT,
-            external_id TEXT,
-            active INTEGER DEFAULT 1,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE
-        );
+            "CREATE TABLE IF NOT EXISTS social_connections (
+                id VARCHAR(191) PRIMARY KEY,
+                client_id VARCHAR(191) NOT NULL,
+                platform VARCHAR(50) NOT NULL,
+                account_name VARCHAR(255),
+                account_username VARCHAR(255),
+                account_picture VARCHAR(500),
+                external_id VARCHAR(191),
+                active INT DEFAULT 1,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )",
 
-        CREATE TABLE IF NOT EXISTS reports (
-            id TEXT PRIMARY KEY,
-            client_id TEXT NOT NULL,
-            title TEXT NOT NULL,
-            period_start DATE NOT NULL,
-            period_end DATE NOT NULL,
-            status TEXT DEFAULT 'DRAFT',
-            executive_summary TEXT,
-            editorial_analysis TEXT,
-            created_by_id TEXT,
-            published_at DATETIME,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE
-        );
+            "CREATE TABLE IF NOT EXISTS reports (
+                id VARCHAR(191) PRIMARY KEY,
+                client_id VARCHAR(191) NOT NULL,
+                title VARCHAR(255) NOT NULL,
+                period_start DATE NOT NULL,
+                period_end DATE NOT NULL,
+                status VARCHAR(50) DEFAULT 'DRAFT',
+                executive_summary TEXT,
+                editorial_analysis LONGTEXT,
+                created_by_id VARCHAR(191),
+                published_at DATETIME,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )",
 
-        CREATE TABLE IF NOT EXISTS report_metrics (
-            id TEXT PRIMARY KEY,
-            report_id TEXT NOT NULL,
-            platform TEXT NOT NULL,
-            metric_key TEXT NOT NULL,
-            current_value REAL NOT NULL,
-            previous_value REAL,
-            percentage_change REAL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE CASCADE
-        );
+            "CREATE TABLE IF NOT EXISTS report_metrics (
+                id VARCHAR(191) PRIMARY KEY,
+                report_id VARCHAR(191) NOT NULL,
+                platform VARCHAR(50) NOT NULL,
+                metric_key VARCHAR(100) NOT NULL,
+                current_value DOUBLE NOT NULL,
+                previous_value DOUBLE,
+                percentage_change DOUBLE,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )",
 
-        CREATE TABLE IF NOT EXISTS report_posts (
-            id TEXT PRIMARY KEY,
-            report_id TEXT,
-            client_id TEXT NOT NULL,
-            platform TEXT NOT NULL,
-            external_post_id TEXT,
-            published_at DATETIME NOT NULL,
-            media_url TEXT,
-            thumbnail_url TEXT,
-            caption TEXT,
-            post_type TEXT,
-            likes INTEGER DEFAULT 0,
-            comments INTEGER DEFAULT 0,
-            shares INTEGER DEFAULT 0,
-            saves INTEGER DEFAULT 0,
-            reach INTEGER DEFAULT 0,
-            impressions INTEGER DEFAULT 0,
-            engagement_rate REAL DEFAULT 0,
-            permalink TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE
-        );
+            "CREATE TABLE IF NOT EXISTS report_posts (
+                id VARCHAR(191) PRIMARY KEY,
+                report_id VARCHAR(191),
+                client_id VARCHAR(191) NOT NULL,
+                platform VARCHAR(50) NOT NULL,
+                external_post_id VARCHAR(191),
+                published_at DATETIME NOT NULL,
+                media_url TEXT,
+                thumbnail_url TEXT,
+                caption TEXT,
+                post_type VARCHAR(50),
+                likes INT DEFAULT 0,
+                comments INT DEFAULT 0,
+                shares INT DEFAULT 0,
+                saves INT DEFAULT 0,
+                reach INT DEFAULT 0,
+                impressions INT DEFAULT 0,
+                engagement_rate DOUBLE DEFAULT 0,
+                permalink TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )",
 
-        CREATE TABLE IF NOT EXISTS recommendations (
-            id TEXT PRIMARY KEY,
-            client_id TEXT NOT NULL,
-            report_id TEXT,
-            category TEXT NOT NULL,
-            priority TEXT NOT NULL,
-            title TEXT NOT NULL,
-            description TEXT NOT NULL,
-            status TEXT DEFAULT 'PENDIENTE',
-            sort_order INTEGER DEFAULT 0,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE
-        );
+            "CREATE TABLE IF NOT EXISTS recommendations (
+                id VARCHAR(191) PRIMARY KEY,
+                client_id VARCHAR(191) NOT NULL,
+                report_id VARCHAR(191),
+                category VARCHAR(100) NOT NULL,
+                priority VARCHAR(50) NOT NULL,
+                title VARCHAR(255) NOT NULL,
+                description TEXT NOT NULL,
+                status VARCHAR(50) DEFAULT 'PENDIENTE',
+                sort_order INT DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )",
 
-        CREATE TABLE IF NOT EXISTS audit_logs (
-            id TEXT PRIMARY KEY,
-            user_id TEXT,
-            user_name TEXT,
-            user_email TEXT,
-            action TEXT NOT NULL,
-            resource_type TEXT NOT NULL,
-            resource_id TEXT,
-            details TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
+            "CREATE TABLE IF NOT EXISTS audit_logs (
+                id VARCHAR(191) PRIMARY KEY,
+                user_id VARCHAR(191),
+                user_name VARCHAR(255),
+                user_email VARCHAR(255),
+                action VARCHAR(100) NOT NULL,
+                resource_type VARCHAR(100) NOT NULL,
+                resource_id VARCHAR(191),
+                details TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )",
 
-        CREATE TABLE IF NOT EXISTS settings (
-            setting_key TEXT PRIMARY KEY,
-            setting_value TEXT,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-        ";
+            "CREATE TABLE IF NOT EXISTS settings (
+                setting_key VARCHAR(191) PRIMARY KEY,
+                setting_value LONGTEXT,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )"
+        ];
 
-        $db->exec($queries);
+        foreach ($tableQueries as $q) {
+            $db->exec($q);
+        }
+    }
     }
 
     public static function seedDatabase(PDO $db): void {
