@@ -135,7 +135,11 @@ if ($method === 'POST') {
                 'message' => "¡Conexión exitosa con Google Gemini ({$displayName})! La clave es válida y está activa."
             ]);
         } else {
-            echo json_encode(['success' => false, 'error' => $lastErr ?: 'No se encontró un modelo disponible para generateContent']);
+            $userFriendlyError = $lastErr;
+            if (stripos($lastErr, 'prepayment') !== false || stripos($lastErr, 'credits') !== false || stripos($lastErr, 'quota') !== false || stripos($lastErr, 'billing') !== false) {
+                $userFriendlyError = "Los créditos de prepago de este proyecto en Google AI Studio están agotados. Puedes crear un nuevo proyecto gratuito en https://aistudio.google.com/app/apikey para obtener una nueva clave con cuota gratuita, o continuar usando el motor estadístico interno que no requiere saldo.";
+            }
+            echo json_encode(['success' => false, 'error' => $userFriendlyError]);
         }
         exit;
     }
