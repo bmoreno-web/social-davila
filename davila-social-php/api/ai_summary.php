@@ -121,11 +121,29 @@ if (!empty($geminiKey)) {
         "1. executive_summary: Un párrafo ejecutivo denso con los datos y porcentajes cuantitativos exactos.\n" .
         "2. editorial_analysis: Un análisis estratégico editorial Davila PM estructurado en 3 puntos (Rendimiento por formato, Calidad de interacción, y Recomendaciones tácticas accionables con números).";
 
-    $preferredModel = Database::getSetting('gemini_model', 'gemini-2.0-flash');
-    $modelsToTry = array_unique([$preferredModel, 'gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro']);
+    $activeModel = Database::getSetting('gemini_model', '');
 
-    foreach ($modelsToTry as $model) {
-        $ch = curl_init("https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key=" . $geminiKey);
+    if (empty($activeModel)) {
+        // Query ListModels to find available model
+        $listUrl = "https://generativelanguage.googleapis.com/v1beta/models?key=" . $geminiKey;
+        $ch = curl_init($listUrl);
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 8]);
+        $listRes = curl_exec($ch);
+        curl_close($ch);
+        $listJson = json_decode($listRes, true);
+        if (isset($listJson['models'])) {
+            foreach ($listJson['models'] as $m) {
+                if (in_array('generateContent', $m['supportedGenerationMethods'] ?? [])) {
+                    $activeModel = $m['name'];
+                    break;
+                }
+            }
+        }
+    }
+
+    if (!empty($activeModel)) {
+        $modelPath = (strpos($activeModel, 'models/') === 0) ? $activeModel : "models/{$activeModel}";
+        $ch = curl_init("https://generativelanguage.googleapis.com/v1beta/{$modelPath}:generateContent?key=" . $geminiKey);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POST => true,
@@ -134,7 +152,7 @@ if (!empty($geminiKey)) {
                 'contents' => [['parts' => [['text' => $prompt]]]],
                 'generationConfig' => ['response_mime_type' => 'application/json']
             ]),
-            CURLOPT_TIMEOUT => 12
+            CURLOPT_TIMEOUT => 15
         ]);
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -150,7 +168,7 @@ if (!empty($geminiKey)) {
                         'success' => true,
                         'executive_summary' => $parsed['executive_summary'],
                         'editorial_analysis' => $parsed['editorial_analysis'],
-                        'model_used' => $model,
+                        'model_used' => $modelPath,
                         'source' => 'gemini_ai'
                     ]);
                     exit;
