@@ -229,6 +229,111 @@ if ($user['role'] !== 'CLIENT') {
             </div>
         </div>
 
+        <!-- 4. Metricool Audience, Web Insights & Demographics -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Community Channels Card -->
+            <div class="glass-panel p-6 rounded-2xl space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i data-lucide="users" class="w-4 h-4 text-violet-500"></i>
+                        <span>Comunidad Social</span>
+                    </h3>
+                    <span class="text-xs font-black text-emerald-500">+0.43%</span>
+                </div>
+                <div class="space-y-3 pt-1">
+                    <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-dark-border flex items-center justify-between text-xs">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-gradient-to-tr from-pink-500 to-amber-500"></span>
+                            <span class="font-bold text-slate-800 dark:text-slate-200">Instagram (@davilapublicidad)</span>
+                        </div>
+                        <strong class="text-slate-900 dark:text-white font-mono">4,675</strong>
+                    </div>
+                    <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-dark-border flex items-center justify-between text-xs">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+                            <span class="font-bold text-slate-800 dark:text-slate-200">Facebook (Dávila P&M)</span>
+                        </div>
+                        <strong class="text-slate-900 dark:text-white font-mono">752</strong>
+                    </div>
+                    <div class="p-3 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-between text-xs font-bold text-violet-600 dark:text-violet-400">
+                        <span>Audiencia Total Consolidada</span>
+                        <span class="text-base font-black">5,427</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Web Traffic Card (davilapublicidad.com) -->
+            <div class="glass-panel p-6 rounded-2xl space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i data-lucide="globe" class="w-4 h-4 text-blue-500"></i>
+                        <span>Tráfico Web davilapublicidad.com</span>
+                    </h3>
+                    <span class="text-xs font-black text-emerald-500">+41.85%</span>
+                </div>
+                <div class="grid grid-cols-2 gap-3 pt-1">
+                    <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-dark-border text-center">
+                        <span class="text-[10px] text-slate-400 uppercase font-bold block">Visitas</span>
+                        <strong class="text-base font-black text-slate-900 dark:text-white mt-0.5 block">383</strong>
+                        <span class="text-[10px] text-emerald-500 font-bold">+41.85%</span>
+                    </div>
+                    <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-dark-border text-center">
+                        <span class="text-[10px] text-slate-400 uppercase font-bold block">Visualizaciones</span>
+                        <strong class="text-base font-black text-slate-900 dark:text-white mt-0.5 block">666</strong>
+                        <span class="text-[10px] text-emerald-500 font-bold">+34.55%</span>
+                    </div>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-dark-border text-[11px] space-y-1.5">
+                    <div class="flex justify-between font-medium text-slate-600 dark:text-slate-300">
+                        <span>Google Search (Orgánico):</span>
+                        <strong class="text-slate-900 dark:text-white">42.6%</strong>
+                    </div>
+                    <div class="flex justify-between font-medium text-slate-600 dark:text-slate-300">
+                        <span>Tráfico Directo:</span>
+                        <strong class="text-slate-900 dark:text-white">27.6%</strong>
+                    </div>
+                    <div class="flex justify-between font-medium text-slate-600 dark:text-slate-300">
+                        <span>Referidos (aceros, zofia, ig):</span>
+                        <strong class="text-slate-900 dark:text-white">29.8%</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Demographics Card -->
+            <div class="glass-panel p-6 rounded-2xl space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i data-lucide="pie-chart" class="w-4 h-4 text-pink-500"></i>
+                        <span>Demografía y Ciudades</span>
+                    </h3>
+                    <span class="text-xs font-bold text-slate-400">Colombia 81.5%</span>
+                </div>
+                <div class="space-y-3 pt-1">
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-xs font-semibold">
+                            <span class="text-slate-600 dark:text-slate-300">Barranquilla (43.35%)</span>
+                            <span class="text-slate-600 dark:text-slate-300">Bogotá (8.71%)</span>
+                        </div>
+                        <div class="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden flex">
+                            <div class="h-full bg-violet-600" style="width: 53%;"></div>
+                            <div class="h-full bg-indigo-500" style="width: 25%;"></div>
+                            <div class="h-full bg-pink-500" style="width: 22%;"></div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-center text-xs pt-1">
+                        <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-dark-border">
+                            <span class="text-[10px] text-slate-400 block uppercase font-bold">Mujeres</span>
+                            <strong class="text-pink-500 text-sm font-black">49.8%</strong>
+                        </div>
+                        <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-dark-border">
+                            <span class="text-[10px] text-slate-400 block uppercase font-bold">Hombres</span>
+                            <strong class="text-blue-500 text-sm font-black">33.6%</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- 4. Top Posts in Period (Ranked by Real Engagement Rate) -->
         <div class="glass-panel p-6 rounded-2xl space-y-4">
             <div class="flex items-center justify-between">

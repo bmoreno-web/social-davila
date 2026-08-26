@@ -366,23 +366,114 @@ class Database {
                 'engagement_rate' => 6.42,
                 'permalink' => 'https://facebook.com/104754815752767'
             ],
+            // 3. Real Verified Metricool Posts for Dávila P&M (July 2026) & Acesco
             [
-                'id' => 'post_dav_1',
+                'id' => 'post_dav_reel_1',
                 'client_id' => 'cli_davila',
                 'platform' => 'INSTAGRAM',
-                'published_at' => date('Y-m-d H:i:s', strtotime('-3 days')),
+                'published_at' => '2026-07-29 11:59:00',
                 'media_url' => 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&auto=format&fit=crop&q=80',
                 'thumbnail_url' => 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&auto=format&fit=crop&q=80',
-                'caption' => 'Estrategia, creatividad y datos que mueven marcas. Detrás de cámaras de nuestra última campaña nacional 🚀✨ #DavilaPM',
+                'caption' => 'Porque detrás de cada idea, cada toma y cada contenido, hay un equipo dispuesto a resolver y aprender... 🎬✨ #DavilaPM #Creatividad #DetrasDeCamaras',
                 'post_type' => 'reel',
-                'likes' => 2150,
-                'comments' => 142,
-                'shares' => 310,
-                'saves' => 420,
-                'reach' => 42500,
-                'impressions' => 56800,
-                'engagement_rate' => 7.11,
+                'likes' => 168,
+                'comments' => 3,
+                'shares' => 36,
+                'saves' => 12,
+                'reach' => 3702,
+                'impressions' => 5552,
+                'engagement_rate' => 5.92,
                 'permalink' => 'https://instagram.com/davilapublicidad'
+            ],
+            [
+                'id' => 'post_dav_img_1',
+                'client_id' => 'cli_davila',
+                'platform' => 'INSTAGRAM',
+                'published_at' => '2026-07-31 10:00:00',
+                'media_url' => 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
+                'thumbnail_url' => 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
+                'caption' => 'Una marca no necesita superpoderes para destacar. Necesita una estrategia que le dé dirección, una propuesta de valor clara y un equipo que haga que las cosas pasen. 🚀📌 #EstrategiaDeMarca #Branding',
+                'post_type' => 'post',
+                'likes' => 17,
+                'comments' => 1,
+                'shares' => 1,
+                'saves' => 1,
+                'reach' => 261,
+                'impressions' => 620,
+                'engagement_rate' => 7.66,
+                'permalink' => 'https://instagram.com/davilapublicidad'
+            ],
+            [
+                'id' => 'post_dav_story_1',
+                'client_id' => 'cli_davila',
+                'platform' => 'INSTAGRAM',
+                'published_at' => '2026-07-01 17:04:00',
+                'media_url' => 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=800&auto=format&fit=crop&q=80',
+                'thumbnail_url' => 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=800&auto=format&fit=crop&q=80',
+                'caption' => 'Lanzamiento de nuevas tendencias en marketing digital y analítica de datos en Davila Publicidad.',
+                'post_type' => 'story',
+                'likes' => 0,
+                'comments' => 0,
+                'shares' => 0,
+                'saves' => 0,
+                'reach' => 221,
+                'impressions' => 223,
+                'engagement_rate' => 0.0,
+                'permalink' => 'https://instagram.com/davilapublicidad'
+            ],
+            [
+                'id' => 'post_dav_story_2',
+                'client_id' => 'cli_davila',
+                'platform' => 'INSTAGRAM',
+                'published_at' => '2026-07-06 17:26:00',
+                'media_url' => 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=800&auto=format&fit=crop&q=80',
+                'thumbnail_url' => 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=800&auto=format&fit=crop&q=80',
+                'caption' => 'Conectando marcas con audiencias reales: consulta nuestro último caso de estudio en davilapublicidad.com',
+                'post_type' => 'story',
+                'likes' => 0,
+                'comments' => 1,
+                'shares' => 0,
+                'saves' => 0,
+                'reach' => 206,
+                'impressions' => 209,
+                'engagement_rate' => 0.48,
+                'permalink' => 'https://instagram.com/davilapublicidad'
+            ],
+            [
+                'id' => 'post_dav_fb_1',
+                'client_id' => 'cli_davila',
+                'platform' => 'FACEBOOK',
+                'published_at' => '2026-07-29 11:59:00',
+                'media_url' => 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&auto=format&fit=crop&q=80',
+                'thumbnail_url' => 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&auto=format&fit=crop&q=80',
+                'caption' => 'Porque detrás de cada idea, cada toma y cada contenido, hay un equipo dispuesto a resolver y aprender...',
+                'post_type' => 'reel',
+                'likes' => 2,
+                'comments' => 0,
+                'shares' => 1,
+                'saves' => 0,
+                'reach' => 10,
+                'impressions' => 214,
+                'engagement_rate' => 1.40,
+                'permalink' => 'https://facebook.com/davilapublicidad'
+            ],
+            [
+                'id' => 'post_dav_fb_2',
+                'client_id' => 'cli_davila',
+                'platform' => 'FACEBOOK',
+                'published_at' => '2026-07-31 10:00:00',
+                'media_url' => 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
+                'thumbnail_url' => 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
+                'caption' => 'Una marca no necesita superpoderes para destacar. Necesita una estrategia que le dé dirección, una...',
+                'post_type' => 'post',
+                'likes' => 0,
+                'comments' => 0,
+                'shares' => 1,
+                'saves' => 0,
+                'reach' => 10,
+                'impressions' => 16,
+                'engagement_rate' => 10.0,
+                'permalink' => 'https://facebook.com/davilapublicidad'
             ]
         ];
 
@@ -396,14 +487,10 @@ class Database {
 
         // 4. Recommendations for Davila PM Brands
         $recs = [
-            ['cli_acesco', 'CONTENIDO', 'ALTA', 'Incrementar frecuencia de Reels técnicos en obra', 'Producir cápsulas de 20-30 segundos donde instaladores certificados muestren la rapidez y seguridad del armado en proyectos reales.'],
-            ['cli_acesco', 'ESTRATEGIA', 'ALTA', 'Campañas de retargeting a distribuidores oficiales', 'Vincular llamadas a la acción con enlaces dinámicos por ciudad al mapa de distribuidores autorizados en www.acesco.com.co.'],
-            ['cli_acesco', 'FORMATO', 'MEDIA', 'Carrouseles educativos de especificaciones técnicas', 'Diseñar infografías visuales de resistencia climática y durabilidad para arquitectos y diseñadores estructurales.'],
-            ['cli_davila', 'ESTRATEGIA', 'ALTA', 'Potenciar casos de éxito y métricas de retorno de inversión', 'El contenido que muestra resultados cuantitativos de campañas genera 3x más leads calificados en LinkedIn.'],
-            ['cli_serena', 'CONTENIDO', 'ALTA', 'Serie de testimonios de especialistas y tecnología médica', 'Humanizar la atención médica destacando el equipamiento de vanguardia del hospital.'],
-            ['cli_zfbaq', 'PAUTA', 'MEDIA', 'Segmentación para directores de logística y comercio exterior', 'Campañas de generación de leads con descargables de beneficios tributarios y aduaneros.'],
-            ['cli_verano', 'FORMATO', 'ALTA', 'Cápsulas dinámicas en TikTok sobre obras e impacto regional', 'Formato conversacional y dinámico para conectar con audiencias jóvenes en el departamento.'],
-            ['cli_chapman', 'CONTENIDO', 'MEDIA', 'Análisis de reformas laborales y jurisprudencia empresarial', 'Infografías y resúmenes ejecutivos en LinkedIn para directores de talento humano y directivos.']
+            ['cli_davila', 'FORMATO', 'ALTA', 'Duplicar frecuencia de Reels detrás de cámaras', 'El Reel de equipo generó el 90% de las interacciones totales de Instagram (219 interacciones, 5.55K vistas y 5.92% ER). Es el formato de mayor tracción.'],
+            ['cli_davila', 'PAUTA', 'MEDIA', 'Optimizar pauta en Facebook Reels y retargeting web', 'El tráfico web creció un +41.85% (383 visitas). Activar píxel para convertir visitantes en prospectos de consultoría.'],
+            ['cli_davila', 'AUDIENCIA', 'ALTA', 'Foco de contenido en Barranquilla (43.3%) y Bogotá (8.7%)', 'El 81.5% de la audiencia es de Colombia con fuerte concentración en el Atlántico y mujeres de 35 a 44 años.'],
+            ['cli_acesco', 'CONTENIDO', 'ALTA', 'Incrementar frecuencia de Reels técnicos en obra', 'Producir cápsulas de 20-30 segundos donde instaladores certificados muestren la rapidez y seguridad del armado en proyectos reales.']
         ];
 
         $stmtRec = $db->prepare("INSERT INTO recommendations (id, client_id, category, priority, title, description, status) VALUES (?, ?, ?, ?, ?, ?, 'PENDIENTE')");
@@ -411,18 +498,18 @@ class Database {
             $stmtRec->execute([uniqid('rec_', true), $r[0], $r[1], $r[2], $r[3], $r[4]]);
         }
 
-        // 5. Monthly Reports
+        // 5. Official Real Metricool Monthly Reports
         $stmtRep = $db->prepare("INSERT INTO reports (id, client_id, title, period_start, period_end, status, executive_summary, editorial_analysis, created_by_id, published_at) 
             VALUES (?, ?, ?, ?, ?, 'PUBLISHED', ?, ?, ?, CURRENT_TIMESTAMP)");
 
         $stmtRep->execute([
-            'rep_acesco_ago',
-            'cli_acesco',
-            'Informe Ejecutivo de Rendimiento Digital — Agosto 2026',
-            '2026-08-01',
-            '2026-08-26',
-            'Durante el ciclo de agosto se consolidó un incremento del 24.8% en alcance orgánico neto y una optimización del engagement rate que alcanzó 6.8%. Los formatos de video corto (Reels) generaron más del 52% del total de interacciones del mes.',
-            "### Balance Estratégico Davila PM — Agosto 2026\n\nDurante el período evaluado, la presencia digital de Acesco Colombia experimentó una aceleración notable en sus indicadores de comunidad y relevancia de marca.",
+            'rep_davila_jul26',
+            'cli_davila',
+            'Informe Oficial Metricool Social Media Insights — Julio 2026',
+            '2026-07-01',
+            '2026-07-31',
+            'Durante el período de julio 2026, Dávila P&M registró un crecimiento extraordinario del +85.65% en impresiones totales (9,732 impactos) y un aumento del +417.02% en interacciones consolidadas (243 interacciones en Instagram y Facebook). La comunidad total alcanzó 5,427 seguidores (+0.43%). El formato con mayor retorno fue el Reel "Detrás de cámaras", que acumuló 5,552 visualizaciones y 219 interacciones.',
+            "### 1. Balance de Formatos y Rendimiento Audiovisual\nEl formato **Reel** se consolidó como el motor principal de visibilidad y engagement en Instagram, generando 5,552 visualizaciones, 3,702 de alcance neto y 219 interacciones con un ER de **5.92%**. Las publicaciones estáticas alcanzaron un excelente ER de **7.66%** con 620 impresiones.\n\n### 2. Calidad de Interacción y Tráfico Web\nLa interacción en Instagram experimentó un salto del **+469.05%** (168 likes, 36 compartidos y 12 guardados). De forma paralela, el sitio web **davilapublicidad.com** creció un **+41.85% en visitas (383)** y un **+34.55% en visualizaciones (666)**, liderado por búsquedas orgánicas en Google (42.6%) y tráfico directo (27.6%).\n\n### 3. Plan Táctico de Optimización Davila PM\n1. **Escalar frecuencia de Reels:** Producir 2 cápsulas semanales de equipo y casos de éxito para mantener el ritmo de 5.5K+ impresiones por video.\n2. **Activar Campañas de Retargeting Web:** Aprovechar las 383 visitas mensuales en davilapublicidad.com para captar leads en servicios de marketing político y branding.\n3. **Segmentación Geográfica:** Concentrar la pauta en Barranquilla (43.35%) y Bogotá (8.71%) para maximizar el retorno de inversión.",
             'usr_admin'
         ]);
 
