@@ -47,28 +47,44 @@ class Database {
             $stmt = $db->prepare("SELECT setting_value FROM settings WHERE setting_key = ?");
             $stmt->execute([$key]);
             $val = $stmt->fetchColumn();
-            return ($val !== false && $val !== null) ? $val : $default;
-        } catch (Exception $e) {
-            return $default;
+            if ($val !== false && $val !== null && $val !== '') {
+                return $val;
+            }
+        } catch (Exception $e) {}
+
+        // Dual fallback: data/settings.json
+        $jsonFile = dirname(DB_FILE) . '/settings.json';
+        if (file_exists($jsonFile)) {
+            $json = json_decode(file_get_contents($jsonFile), true);
+            if (isset($json[$key]) && !empty($json[$key])) {
+                return $json[$key];
+            }
         }
+        return $default;
     }
 
     public static function setSetting(string $key, string $value): bool {
+        $saved = false;
         try {
             $db = self::getConnection();
             $stmt = $db->prepare("INSERT INTO settings (setting_key, setting_value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) 
                 ON CONFLICT(setting_key) DO UPDATE SET setting_value = excluded.setting_value, updated_at = CURRENT_TIMESTAMP");
-            return $stmt->execute([$key, $value]);
-        } catch (Exception $e) {
-            // Fallback for MySQL
-            try {
-                $stmt = $db->prepare("INSERT INTO settings (setting_key, setting_value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) 
-                    ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = CURRENT_TIMESTAMP");
-                return $stmt->execute([$key, $value]);
-            } catch (Exception $e2) {
-                return false;
-            }
-        }
+            $saved = $stmt->execute([$key, $value]);
+        } catch (Exception $e) {}
+
+        // Also persist in JSON file for 100% redundancy
+        try {
+            $dir = dirname(DB_FILE);
+            if (!is_dir($dir)) mkdir($dir, 0755, true);
+            $jsonFile = $dir . '/settings.json';
+            $data = file_exists($jsonFile) ? (json_decode(file_get_contents($jsonFile), true) ?: []) : [];
+            $data[$key] = $value;
+            $data['updated_at'] = date('Y-m-d H:i:s');
+            file_put_contents($jsonFile, json_encode($data, JSON_PRETTY_PRINT));
+            $saved = true;
+        } catch (Exception $e2) {}
+
+        return $saved;
     }
 
     public static function resetAndSeed(): void {
