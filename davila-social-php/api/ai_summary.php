@@ -104,8 +104,9 @@ $likesFmt = number_format($totalLikes);
 $commFmt = number_format($totalComments);
 $savesFmt = number_format($totalSaves);
 
-// 3. Optional Gemini API Engine if configured
-if (defined('GEMINI_API_KEY') && !empty(GEMINI_API_KEY)) {
+// 3. Optional Gemini API Engine if configured in Admin or Config
+$geminiKey = Database::getSetting('gemini_api_key', defined('GEMINI_API_KEY') ? GEMINI_API_KEY : '');
+if (!empty($geminiKey)) {
     $prompt = "Eres el Director de Estrategia y Analítica Digital de la agencia Davila PM. Genera un análisis profesional en español basado estrictamente en estas métricas reales:\n\n" .
         "Marca: {$brandName}\n" .
         "Sector: {$industry}\n" .
@@ -120,7 +121,7 @@ if (defined('GEMINI_API_KEY') && !empty(GEMINI_API_KEY)) {
         "1. executive_summary: Un párrafo ejecutivo denso con los datos y porcentajes cuantitativos exactos.\n" .
         "2. editorial_analysis: Un análisis estratégico editorial Davila PM estructurado en 3 puntos (Rendimiento por formato, Calidad de interacción, y Recomendaciones tácticas accionables con números).";
 
-    $ch = curl_init("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" . GEMINI_API_KEY);
+    $ch = curl_init("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" . $geminiKey);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST => true,

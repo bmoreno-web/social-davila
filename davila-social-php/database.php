@@ -24,18 +24,51 @@ class Database {
                     if ($isNew || filesize(DB_FILE) === 0) {
                         self::initSchema(self::$instance);
                         self::seedDatabase(self::$instance);
+                    } else {
+                        self::initSchema(self::$instance);
                     }
                 } else {
                     $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4";
                     self::$instance = new PDO($dsn, DB_USER, DB_PASS);
                     self::$instance->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
                     self::$instance->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+                    self::initSchema(self::$instance);
                 }
             } catch (PDOException $e) {
                 die("Error de conexión a la base de datos: " . $e->getMessage());
             }
         }
         return self::$instance;
+    }
+
+    public static function getSetting(string $key, string $default = ''): string {
+        try {
+            $db = self::getConnection();
+            $stmt = $db->prepare("SELECT setting_value FROM settings WHERE setting_key = ?");
+            $stmt->execute([$key]);
+            $val = $stmt->fetchColumn();
+            return ($val !== false && $val !== null) ? $val : $default;
+        } catch (Exception $e) {
+            return $default;
+        }
+    }
+
+    public static function setSetting(string $key, string $value): bool {
+        try {
+            $db = self::getConnection();
+            $stmt = $db->prepare("INSERT INTO settings (setting_key, setting_value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) 
+                ON CONFLICT(setting_key) DO UPDATE SET setting_value = excluded.setting_value, updated_at = CURRENT_TIMESTAMP");
+            return $stmt->execute([$key, $value]);
+        } catch (Exception $e) {
+            // Fallback for MySQL
+            try {
+                $stmt = $db->prepare("INSERT INTO settings (setting_key, setting_value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) 
+                    ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = CURRENT_TIMESTAMP");
+                return $stmt->execute([$key, $value]);
+            } catch (Exception $e2) {
+                return false;
+            }
+        }
     }
 
     public static function resetAndSeed(): void {
@@ -165,6 +198,12 @@ class Database {
             resource_id TEXT,
             details TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS settings (
+            setting_key TEXT PRIMARY KEY,
+            setting_value TEXT,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
         ";
 
