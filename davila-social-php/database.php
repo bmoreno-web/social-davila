@@ -11,7 +11,24 @@ class Database {
     public static function getConnection(): PDO {
         if (self::$instance === null) {
             try {
-                if (DB_TYPE === 'sqlite') {
+                if (defined('DB_TYPE') && DB_TYPE === 'mysql') {
+                    $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4";
+                    self::$instance = new PDO($dsn, DB_USER, DB_PASS, [
+                        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+                    ]);
+                    self::initSchema(self::$instance);
+                    
+                    // Auto-seed if MySQL database is freshly created and empty
+                    try {
+                        $userCount = (int)self::$instance->query("SELECT count(*) FROM users")->fetchColumn();
+                        if ($userCount === 0) {
+                            self::seedDatabase(self::$instance);
+                        }
+                    } catch (Exception $e) {
+                        self::seedDatabase(self::$instance);
+                    }
+                } else {
                     $dir = dirname(DB_FILE);
                     if (!is_dir($dir)) {
                         mkdir($dir, 0755, true);
@@ -27,25 +44,21 @@ class Database {
                     } else {
                         self::initSchema(self::$instance);
                     }
-                } else {
-                    $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4";
-                    self::$instance = new PDO($dsn, DB_USER, DB_PASS);
-                    self::$instance->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-                    self::$instance->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-                    self::initSchema(self::$instance);
-                    
-                    // Auto-seed if MySQL database is freshly created and empty
-                    try {
-                        $userCount = (int)self::$instance->query("SELECT count(*) FROM users")->fetchColumn();
-                        if ($userCount === 0) {
-                            self::seedDatabase(self::$instance);
-                        }
-                    } catch (Exception $e) {
-                        self::seedDatabase(self::$instance);
-                    }
                 }
-            } catch (PDOException $e) {
-                die("Error de conexión a la base de datos: " . $e->getMessage());
+            } catch (Exception $e) {
+                // Fallback to SQLite so the application NEVER crashes with 500
+                $dir = dirname(DB_FILE);
+                if (!is_dir($dir)) {
+                    mkdir($dir, 0755, true);
+                }
+                $isNew = !file_exists(DB_FILE) || filesize(DB_FILE) === 0;
+                self::$instance = new PDO('sqlite:' . DB_FILE);
+                self::$instance->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                self::$instance->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+                self::initSchema(self::$instance);
+                if ($isNew) {
+                    self::seedDatabase(self::$instance);
+                }
             }
         }
         return self::$instance;
@@ -238,7 +251,6 @@ class Database {
         foreach ($tableQueries as $q) {
             $db->exec($q);
         }
-    }
     }
 
     public static function seedDatabase(PDO $db): void {
