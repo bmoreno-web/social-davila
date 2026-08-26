@@ -58,7 +58,7 @@ if ($action === 'sync') {
         $del->execute([$clientId]);
 
         $stmtPost = $db->prepare("INSERT INTO report_posts 
-            (id, client_id, platform, external_post_id, published_at, media_url, thumbnailUrl, caption, post_type, likes, comments, shares, saves, reach, impressions, engagement_rate, permalink) 
+            (id, client_id, platform, external_post_id, published_at, media_url, thumbnail_url, caption, post_type, likes, comments, shares, saves, reach, impressions, engagement_rate, permalink) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
         $syncedCount = 0;
