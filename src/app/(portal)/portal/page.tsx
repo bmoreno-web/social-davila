@@ -49,6 +49,7 @@ export default function ClientPortalHomePage() {
   const [client, setClient] = useState<any>(null);
   const [allClients, setAllClients] = useState<any[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string>('');
+  const [userSession, setUserSession] = useState<any>(null);
   const [metrics, setMetrics] = useState<any>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [reports, setReports] = useState<any[]>([]);
@@ -67,15 +68,29 @@ export default function ClientPortalHomePage() {
   const loadInitialData = async () => {
     try {
       setIsLoading(true);
-      const clientsRes = await fetch('/api/clients');
-      const clientsData = await clientsRes.json();
-      const clientList = clientsData.clients || [];
-      setAllClients(clientList);
 
-      const activeId = selectedClientId || clientList[0]?.id || 'cmtag1oha0000t0g80a05ym3q';
-      setSelectedClientId(activeId);
+      // Check current user session role
+      const authRes = await fetch('/api/auth/me');
+      const authData = await authRes.json();
+      const currentUser = authData.user;
+      setUserSession(currentUser);
 
-      await loadClientDetails(activeId, dateRangePreset);
+      if (currentUser?.role === 'CLIENT') {
+        // Locked to their specific brand
+        const activeId = currentUser.clientId || 'cmtag1oha0000t0g80a05ym3q';
+        setSelectedClientId(activeId);
+        await loadClientDetails(activeId, dateRangePreset);
+      } else {
+        // Agency team (ADMIN / ANALYST) can switch clients
+        const clientsRes = await fetch('/api/clients');
+        const clientsData = await clientsRes.json();
+        const clientList = clientsData.clients || [];
+        setAllClients(clientList);
+
+        const activeId = selectedClientId || clientList[0]?.id || 'cmtag1oha0000t0g80a05ym3q';
+        setSelectedClientId(activeId);
+        await loadClientDetails(activeId, dateRangePreset);
+      }
     } catch (e) {
       console.error('Error loading portal data:', e);
     } finally {
@@ -183,9 +198,9 @@ export default function ClientPortalHomePage() {
             </div>
           </div>
 
-          {/* Quick Actions & Brand Switcher */}
+          {/* Quick Actions & Brand Switcher (Only visible to Agency Admins/Analysts) */}
           <div className="flex items-center gap-3 flex-wrap">
-            {allClients.length > 1 && (
+            {userSession?.role !== 'CLIENT' && allClients.length > 1 && (
               <div className="flex items-center gap-2 bg-zinc-950/80 border border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-zinc-300">
                 <Building2 className="h-3.5 w-3.5 text-purple-400" />
                 <select

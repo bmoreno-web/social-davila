@@ -30,11 +30,33 @@ export async function GET() {
     });
 
     if (!user) {
-      return NextResponse.json({ authenticated: false, user: null }, { status: 401 });
+      return NextResponse.json({
+        authenticated: true,
+        user: {
+          id: session.userId,
+          name: session.name,
+          email: session.email,
+          role: session.role,
+          clientId: session.clientId
+        }
+      });
     }
 
     return NextResponse.json({ authenticated: true, user });
   } catch (error) {
-    return NextResponse.json({ error: 'Error al verificar sesión' }, { status: 500 });
+    const session = await getSession();
+    if (session) {
+      return NextResponse.json({
+        authenticated: true,
+        user: {
+          id: session.userId,
+          name: session.name,
+          email: session.email,
+          role: session.role,
+          clientId: session.clientId
+        }
+      });
+    }
+    return NextResponse.json({ authenticated: false, user: null }, { status: 401 });
   }
 }
