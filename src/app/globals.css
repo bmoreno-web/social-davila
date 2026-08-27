@@ -3,8 +3,9 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --background: 220 20% 98%;
+  :root,
+  .light {
+    --background: 210 40% 98%;
     --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
@@ -16,20 +17,20 @@
     --primary: 271 81% 56%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 210 40% 96.1%;
+    --secondary: 214 32% 91%;
     --secondary-foreground: 222 47% 11.2%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 214 32% 91%;
+    --muted-foreground: 215.4 16.3% 40%;
 
-    --accent: 210 40% 96.1%;
+    --accent: 214 32% 91%;
     --accent-foreground: 222 47% 11.2%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    --border: 214.3 31.8% 88%;
+    --input: 214.3 31.8% 88%;
     --ring: 271 81% 56%;
 
     --radius: 0.75rem;
@@ -74,9 +75,66 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground antialiased selection:bg-purple-500/20 selection:text-purple-300;
+    @apply bg-background text-foreground antialiased selection:bg-purple-500/20 selection:text-purple-300 transition-colors duration-300;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
+}
+
+/* Light mode overrides for deep dark components */
+html.light body {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+html.light .bg-zinc-950,
+html.light .bg-zinc-950\/80,
+html.light .bg-zinc-950\/90,
+html.light .bg-zinc-950\/60 {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+html.light .bg-zinc-900,
+html.light .bg-zinc-900\/80,
+html.light .bg-zinc-900\/70,
+html.light .bg-zinc-900\/60 {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+html.light .bg-\[\#07090e\],
+html.light .bg-\[\#090b10\],
+html.light .bg-\[\#0a0c13\]\/80 {
+  background-color: #f8fafc !important;
+}
+
+html.light .border-zinc-800,
+html.light .border-zinc-800\/80,
+html.light .border-zinc-800\/60 {
+  border-color: #e2e8f0 !important;
+}
+
+html.light .border-zinc-700,
+html.light .border-zinc-700\/80 {
+  border-color: #cbd5e1 !important;
+}
+
+html.light .text-white {
+  color: #0f172a !important;
+}
+
+html.light .text-zinc-100,
+html.light .text-zinc-200 {
+  color: #1e293b !important;
+}
+
+html.light .text-zinc-300,
+html.light .text-zinc-400 {
+  color: #475569 !important;
+}
+
+html.light .text-zinc-500 {
+  color: #64748b !important;
 }
 
 /* Custom Editorial Agency Glassmorphism & Micro-animations */
@@ -87,6 +145,12 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+html.light .glass-panel {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
 .glass-card {
   background: rgba(24, 28, 40, 0.85);
   backdrop-filter: blur(8px);
@@ -94,34 +158,48 @@
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+html.light .glass-card {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+}
+
 .glass-card:hover {
   border-color: rgba(168, 85, 247, 0.25);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
 }
 
-.glow-purple {
-  box-shadow: 0 0 25px -5px rgba(168, 85, 247, 0.25);
-}
-
-.glow-gold {
-  box-shadow: 0 0 20px -5px rgba(212, 175, 55, 0.2);
-}
-
-/* Custom Scrollbar */
+/* Custom Scrollbar for sleek agency UI */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(11, 13, 19, 0.5);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(168, 85, 247, 0.2);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(168, 85, 247, 0.4);
+}
+
+/* Micro-animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

@@ -5,6 +5,7 @@ import { getSession } from '@/lib/auth/session';
 import { LogOut, BarChart3, ShieldCheck, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PortalLogoutButton } from '@/components/portal/portal-logout-button';
+import { ThemeToggle } from '@/components/theme/theme-toggle';
 
 export default async function PortalLayout({
   children,
@@ -44,6 +45,9 @@ export default async function PortalLayout({
               </Button>
             </Link>
           )}
+
+          {/* Dark / Light Toggle */}
+          <ThemeToggle />
 
           <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300">
             <span className="h-2 w-2 rounded-full bg-emerald-400" />

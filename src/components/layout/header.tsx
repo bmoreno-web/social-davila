@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { RefreshCw, Building2, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/theme/theme-toggle';
 
 interface HeaderProps {
   title?: string;
@@ -96,6 +97,9 @@ export function Header({ title = 'DAVILA PM SOCIAL', subtitle, onSyncAll }: Head
           </span>
           <span className="text-zinc-300 font-medium text-[11px]">Motor Metricool: Activo</span>
         </div>
+
+        {/* Theme Toggle (Dark / Light) */}
+        <ThemeToggle />
 
         {/* Sync Button */}
         <Button
