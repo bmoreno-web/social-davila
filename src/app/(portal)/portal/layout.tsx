@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { getSession } from '@/lib/auth/session';
 import { LogOut, BarChart3, ShieldCheck, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { PortalLogoutButton } from '@/components/portal/portal-logout-button';
 
 export default async function PortalLayout({
   children,
@@ -40,11 +41,7 @@ export default async function PortalLayout({
             <span>{session.name}</span>
           </div>
 
-          <form action="/api/auth/logout" method="POST">
-            <Button variant="ghost" size="sm" type="submit" className="h-8 text-xs text-zinc-400 hover:text-red-400">
-              <LogOut className="h-3.5 w-3.5 mr-1.5" /> Salir
-            </Button>
-          </form>
+          <PortalLogoutButton />
         </div>
       </header>
 

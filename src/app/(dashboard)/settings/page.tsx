@@ -17,7 +17,12 @@ import {
   UserX,
   Mail,
   Lock,
-  Sparkles
+  Sparkles,
+  ExternalLink,
+  Eye,
+  EyeOff,
+  Save,
+  Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +32,14 @@ import { formatDateSpanish } from '@/lib/utils';
 export default function SettingsPage() {
   const [metricoolStatus, setMetricoolStatus] = useState<any>(null);
   const [isTesting, setIsTesting] = useState(false);
+
+  // Gemini AI State
+  const [geminiApiKey, setGeminiApiKey] = useState('');
+  const [showGeminiKey, setShowGeminiKey] = useState(false);
+  const [isTestingGemini, setIsTestingGemini] = useState(false);
+  const [isSavingGemini, setIsSavingGemini] = useState(false);
+  const [geminiStatus, setGeminiStatus] = useState<{ success?: boolean; message?: string; model?: string; error?: string } | null>(null);
+  const [geminiSaveMsg, setGeminiSaveMsg] = useState<string | null>(null);
 
   // Users State
   const [users, setUsers] = useState<any[]>([]);
@@ -58,6 +71,65 @@ export default function SettingsPage() {
     }
   };
 
+  const fetchAiSettings = async () => {
+    try {
+      const res = await fetch('/api/settings/ai');
+      const data = await res.json();
+      if (data.apiKey) {
+        setGeminiApiKey(data.apiKey);
+        setGeminiStatus({ success: true, message: `Clave configurada (Modelo activo: ${data.activeModel || 'gemini-3.6-flash'})` });
+      }
+    } catch (e) {
+      console.error('Error fetching AI settings:', e);
+    }
+  };
+
+  const testGeminiConnection = async () => {
+    if (!geminiApiKey.trim()) {
+      setGeminiStatus({ success: false, error: 'Ingresa una clave API de Google Gemini primero' });
+      return;
+    }
+    setIsTestingGemini(true);
+    setGeminiStatus(null);
+    try {
+      const res = await fetch('/api/settings/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'test', apiKey: geminiApiKey.trim() })
+      });
+      const data = await res.json();
+      setGeminiStatus(data);
+    } catch (e: any) {
+      setGeminiStatus({ success: false, error: 'Error de red al conectar con Google' });
+    } finally {
+      setIsTestingGemini(false);
+    }
+  };
+
+  const saveGeminiKey = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingGemini(true);
+    setGeminiSaveMsg(null);
+    try {
+      const res = await fetch('/api/settings/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'save', apiKey: geminiApiKey.trim() })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setGeminiSaveMsg('¡Clave de Google Gemini guardada exitosamente en el servidor!');
+        setTimeout(() => setGeminiSaveMsg(null), 3500);
+      } else {
+        setGeminiStatus({ success: false, error: data.error || 'Error al guardar' });
+      }
+    } catch (e) {
+      setGeminiStatus({ success: false, error: 'Error de conexión' });
+    } finally {
+      setIsSavingGemini(false);
+    }
+  };
+
   const fetchUsersAndClients = async () => {
     setIsLoadingUsers(true);
     try {
@@ -79,6 +151,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     testConnection();
+    fetchAiSettings();
     fetchUsersAndClients();
   }, []);
 
@@ -98,7 +171,7 @@ export default function SettingsPage() {
     setEditingUserId(user.id);
     setFormName(user.name);
     setFormEmail(user.email);
-    setFormPassword(''); // leave blank unless changing
+    setFormPassword('');
     setFormRole(user.role);
     setFormClientId(user.clientId || (clients[0]?.id || ''));
     setFormActive(user.active);
@@ -168,15 +241,138 @@ export default function SettingsPage() {
     <div className="space-y-8 max-w-5xl mx-auto animate-fadeIn pb-16">
       <div>
         <h1 className="text-2xl font-bold text-white font-display tracking-tight flex items-center gap-2.5">
-          <Settings className="h-6 w-6 text-purple-400" /> Configuración & Usuarios
+          <Settings className="h-6 w-6 text-purple-400" /> Configuración & Ajustes del Sistema
         </h1>
         <p className="text-xs text-zinc-400">
-          Administración de usuarios, roles de acceso, seguridad y conexión con Metricool API.
+          Administración de Inteligencia Artificial (Gemini), usuarios, roles y conexión con Metricool API.
         </p>
       </div>
 
-      {/* GESTIÓN DE USUARIOS */}
-      <div className="p-6 rounded-2xl bg-zinc-900/80 border border-zinc-800 space-y-5 shadow-xl">
+      {/* 1. MOTOR DE INTELIGENCIA ARTIFICIAL (GOOGLE GEMINI) */}
+      <div className="p-6 rounded-3xl bg-gradient-to-br from-purple-950/40 via-zinc-900/90 to-zinc-900/60 border border-purple-500/30 space-y-5 shadow-2xl relative overflow-hidden">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 via-indigo-500 to-amber-400 flex items-center justify-center text-white shadow-lg shadow-purple-600/30 text-xl font-bold shrink-0">
+              ✨
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-base font-bold text-white font-display">
+                  Motor de Inteligencia Artificial (Google Gemini)
+                </h2>
+                <Badge variant="purple" className="text-[10px] font-bold">
+                  Gemini 3.6 Flash
+                </Badge>
+              </div>
+              <p className="text-xs text-zinc-400 mt-0.5">
+                Generación de resúmenes ejecutivos, análisis cualitativos y recomendaciones para los informes de clientes.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <form onSubmit={saveGeminiKey} className="space-y-4 pt-1">
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-semibold text-zinc-300">
+                Google Gemini API Key
+              </label>
+              <a
+                href="https://aistudio.google.com/app/apikey"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] font-bold text-purple-400 hover:text-purple-300 hover:underline flex items-center gap-1 transition-colors"
+              >
+                <span>Obtener API Key en Google AI Studio</span>
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
+
+            <div className="relative">
+              <input
+                type={showGeminiKey ? 'text' : 'password'}
+                value={geminiApiKey}
+                onChange={(e) => setGeminiApiKey(e.target.value)}
+                placeholder="AQ.Ab8... o AIzaSy..."
+                className="w-full pl-4 pr-24 py-2.5 bg-zinc-950/80 border border-zinc-800 focus:border-purple-500/80 rounded-xl text-xs font-mono text-white focus:ring-2 focus:ring-purple-500/20 focus:outline-none transition-all"
+              />
+              <button
+                type="button"
+                onClick={() => setShowGeminiKey(!showGeminiKey)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white text-xs font-semibold px-2 py-1 flex items-center gap-1 transition-colors"
+              >
+                {showGeminiKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                <span>{showGeminiKey ? 'Ocultar' : 'Ver'}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Real-time Status Alert */}
+          {geminiStatus && (
+            <div
+              className={`p-3.5 rounded-xl border text-xs flex items-center justify-between gap-3 animate-fadeIn ${
+                geminiStatus.success
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                  : 'bg-red-500/10 border-red-500/30 text-red-400'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                {geminiStatus.success ? (
+                  <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                ) : (
+                  <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
+                )}
+                <span>{geminiStatus.message || geminiStatus.error}</span>
+              </div>
+              {geminiStatus.model && (
+                <Badge variant="purple" className="text-[10px]">
+                  {geminiStatus.model}
+                </Badge>
+              )}
+            </div>
+          )}
+
+          {geminiSaveMsg && (
+            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center gap-2 animate-fadeIn">
+              <CheckCircle2 className="h-4 w-4" />
+              <span>{geminiSaveMsg}</span>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between pt-1 flex-wrap gap-3">
+            <p className="text-[11px] text-zinc-500">
+              ⚡ Compatible con cuota gratuita (Free Tier) y modelos Flash de alta velocidad.
+            </p>
+
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="glass"
+                size="sm"
+                onClick={testGeminiConnection}
+                isLoading={isTestingGemini}
+                className="text-xs border-zinc-700 text-zinc-300 hover:text-white gap-1.5"
+              >
+                <Zap className="h-3.5 w-3.5 text-amber-400" />
+                <span>Probar Conexión</span>
+              </Button>
+
+              <Button
+                type="submit"
+                size="sm"
+                isLoading={isSavingGemini}
+                className="bg-purple-600 hover:bg-purple-700 text-white text-xs gap-1.5 shadow-md shadow-purple-600/30"
+              >
+                <Save className="h-3.5 w-3.5" />
+                <span>Guardar Clave</span>
+              </Button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      {/* 2. GESTIÓN DE USUARIOS */}
+      <div className="p-6 rounded-3xl bg-zinc-900/80 border border-zinc-800 space-y-5 shadow-xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-purple-950/60 border border-purple-500/30 flex items-center justify-center text-purple-400">
@@ -192,14 +388,14 @@ export default function SettingsPage() {
 
           <Button
             onClick={openCreateModal}
-            className="bg-purple-600 hover:bg-purple-700 text-white text-xs gap-1.5 self-start sm:self-auto"
+            className="bg-purple-600 hover:bg-purple-700 text-white text-xs gap-1.5 self-start sm:self-auto shadow-md shadow-purple-600/20"
           >
             <Plus className="h-4 w-4" /> Crear Nuevo Usuario
           </Button>
         </div>
 
         {/* Users Table */}
-        <div className="rounded-xl border border-zinc-800/80 overflow-hidden bg-zinc-950/60">
+        <div className="rounded-2xl border border-zinc-800/80 overflow-hidden bg-zinc-950/60">
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-zinc-800 bg-zinc-900/90 text-zinc-400 uppercase tracking-wider text-[10px]">
@@ -300,8 +496,8 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* METRICOOL API INTEGRATION STATUS */}
-      <div className="p-6 rounded-2xl bg-zinc-900/80 border border-zinc-800 space-y-4">
+      {/* 3. METRICOOL API INTEGRATION STATUS */}
+      <div className="p-6 rounded-3xl bg-zinc-900/80 border border-zinc-800 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-purple-950/60 border border-purple-500/30 flex items-center justify-center text-purple-400">
@@ -364,8 +560,8 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* AGENCY IDENTITY */}
-      <div className="p-6 rounded-2xl bg-zinc-900/80 border border-zinc-800 space-y-4">
+      {/* 4. AGENCY IDENTITY */}
+      <div className="p-6 rounded-3xl bg-zinc-900/80 border border-zinc-800 space-y-4">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-amber-950/60 border border-amber-500/30 flex items-center justify-center text-amber-400">
             <Building2 className="h-5 w-5" />

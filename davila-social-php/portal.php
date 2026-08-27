@@ -56,6 +56,22 @@ if ($user['role'] !== 'CLIENT') {
         </div>
 
         <div class="flex items-center gap-3">
+            <?php 
+            $allClientsList = $db->query("SELECT id, name FROM clients WHERE active = 1 ORDER BY name ASC")->fetchAll();
+            if ($user['role'] !== 'CLIENT' && count($allClientsList) > 1): 
+            ?>
+                <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-dark-border px-3 py-1.5 rounded-xl text-xs">
+                    <i data-lucide="building-2" class="w-3.5 h-3.5 text-violet-500"></i>
+                    <select onchange="location.href='portal.php?client_id='+this.value" class="bg-transparent font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer">
+                        <?php foreach ($allClientsList as $ac): ?>
+                            <option value="<?= $ac['id'] ?>" <?= $ac['id'] === $clientId ? 'selected' : '' ?> class="bg-white dark:bg-slate-900">
+                                <?= htmlspecialchars($ac['name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            <?php endif; ?>
+
             <!-- Theme Toggle Button -->
             <button onclick="toggleTheme()" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center gap-2">
                 <i data-lucide="sun" class="theme-icon-sun w-3.5 h-3.5 text-amber-500"></i>

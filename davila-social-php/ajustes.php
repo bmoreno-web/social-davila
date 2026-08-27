@@ -58,7 +58,7 @@ require_once __DIR__ . '/includes/sidebar.php';
                         </a>
                     </div>
                     <div class="relative">
-                        <input type="password" name="gemini_api_key" id="geminiApiKey" value="<?= htmlspecialchars($geminiKey) ?>" placeholder="AIzaSy..." 
+                        <input type="password" name="gemini_api_key" id="geminiApiKey" value="<?= htmlspecialchars($geminiKey) ?>" placeholder="AQ.Ab8... o AIzaSy..." 
                             class="w-full pl-4 pr-24 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-mono text-slate-900 dark:text-white focus:ring-2 focus:ring-violet-500 focus:outline-none">
                         <button type="button" onclick="togglePasswordVisibility('geminiApiKey', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs font-semibold px-2 py-1">
                             Ver
