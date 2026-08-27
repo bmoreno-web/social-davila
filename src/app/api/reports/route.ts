@@ -41,17 +41,17 @@ export async function GET(req: NextRequest) {
         orderBy: { createdAt: 'desc' }
       });
     } catch (e) {
-      console.warn('Prisma fetch reports error:', e);
+      console.warn('Prisma fetch reports error, using memory fallback:', e);
     }
 
-    // Merge any memory reports if DB was offline
+    // Merge in-memory reports
     const combined = [...reports, ...IN_MEMORY_REPORTS];
     const uniqueReports = Array.from(new Map(combined.map(r => [r.id, r])).values());
 
     return NextResponse.json({ reports: uniqueReports });
   } catch (error: any) {
     console.error('Reports fetch error:', error);
-    return NextResponse.json({ error: 'Error al listar reportes' }, { status: 500 });
+    return NextResponse.json({ error: 'Error al listar reportes', reports: IN_MEMORY_REPORTS }, { status: 200 });
   }
 }
 
@@ -69,8 +69,8 @@ export async function POST(req: NextRequest) {
       periodStart,
       periodEnd,
       status = 'DRAFT',
-      executiveSummary,
-      editorialAnalysis,
+      executiveSummary = '',
+      editorialAnalysis = '',
       metrics = [],
       recommendations = []
     } = body;
@@ -80,43 +80,55 @@ export async function POST(req: NextRequest) {
     }
 
     // 1. Resolve exact Client in DB
-    let targetClient = await prisma.client.findUnique({
-      where: { id: clientId }
-    });
-
-    if (!targetClient) {
-      targetClient = await prisma.client.findFirst({
-        where: {
-          OR: [
-            { slug: clientId },
-            { name: { contains: clientId, mode: 'insensitive' } }
-          ]
-        }
+    let targetClient: any = null;
+    try {
+      targetClient = await prisma.client.findUnique({
+        where: { id: clientId }
       });
-    }
 
-    if (!targetClient) {
-      // Fallback to first available client
-      targetClient = await prisma.client.findFirst();
+      if (!targetClient) {
+        targetClient = await prisma.client.findFirst({
+          where: {
+            OR: [
+              { slug: clientId },
+              { name: { contains: clientId, mode: 'insensitive' } }
+            ]
+          }
+        });
+      }
+
+      if (!targetClient) {
+        targetClient = await prisma.client.findFirst();
+      }
+    } catch (clientErr) {
+      console.warn('Error resolving client in Prisma:', clientErr);
     }
 
     const actualClientId = targetClient ? targetClient.id : clientId;
 
     // 2. Resolve Creator User ID (avoid FK constraint error)
     let creatorUserId: string | null = null;
-    if (session.userId) {
-      const userExists = await prisma.user.findUnique({
-        where: { id: session.userId }
-      });
-      if (userExists) {
-        creatorUserId = userExists.id;
-      } else {
-        const adminUser = await prisma.user.findFirst({
-          where: { role: 'ADMIN' }
+    try {
+      if (session.userId) {
+        const userExists = await prisma.user.findUnique({
+          where: { id: session.userId }
         });
-        if (adminUser) creatorUserId = adminUser.id;
+        if (userExists) {
+          creatorUserId = userExists.id;
+        } else {
+          const adminUser = await prisma.user.findFirst({
+            where: { role: 'ADMIN' }
+          });
+          if (adminUser) creatorUserId = adminUser.id;
+        }
       }
+    } catch (userErr) {
+      console.warn('Error resolving user in Prisma:', userErr);
     }
+
+    // Parse dates safely
+    const validStart = periodStart && !isNaN(new Date(periodStart).getTime()) ? new Date(periodStart) : new Date();
+    const validEnd = periodEnd && !isNaN(new Date(periodEnd).getTime()) ? new Date(periodEnd) : new Date();
 
     let savedReport: any = null;
 
@@ -125,8 +137,8 @@ export async function POST(req: NextRequest) {
         data: {
           clientId: actualClientId,
           title,
-          periodStart: new Date(periodStart || Date.now()),
-          periodEnd: new Date(periodEnd || Date.now()),
+          periodStart: validStart,
+          periodEnd: validEnd,
           status,
           executiveSummary: executiveSummary || '',
           editorialAnalysis: editorialAnalysis || '',
@@ -164,14 +176,14 @@ export async function POST(req: NextRequest) {
         }
       });
     } catch (prismaErr) {
-      console.error('Prisma report creation failed, creating synthesized fallback:', prismaErr);
+      console.error('Prisma report creation failed, saving to in-memory store:', prismaErr);
       
       savedReport = {
         id: `rep-${Date.now()}`,
         clientId: actualClientId,
         title,
-        periodStart: periodStart || new Date().toISOString(),
-        periodEnd: periodEnd || new Date().toISOString(),
+        periodStart: validStart.toISOString(),
+        periodEnd: validEnd.toISOString(),
         status,
         executiveSummary: executiveSummary || '',
         editorialAnalysis: editorialAnalysis || '',
@@ -179,7 +191,7 @@ export async function POST(req: NextRequest) {
         client: targetClient || {
           id: actualClientId,
           name: 'Cliente Davila PM',
-          logo: '',
+          logo: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=200&auto=format&fit=crop&q=80',
           slug: 'cliente'
         },
         metrics: metrics.map((m: any, idx: number) => ({
@@ -229,7 +241,10 @@ export async function POST(req: NextRequest) {
       message: status === 'PUBLISHED' ? '¡Informe publicado exitosamente!' : '¡Borrador guardado exitosamente!'
     });
   } catch (error: any) {
-    console.error('Create report error:', error);
-    return NextResponse.json({ error: 'Error al generar reporte' }, { status: 500 });
+    console.error('Fatal create report error:', error);
+    return NextResponse.json({ 
+      error: error?.message || 'Error al generar reporte',
+      details: String(error)
+    }, { status: 500 });
   }
 }
