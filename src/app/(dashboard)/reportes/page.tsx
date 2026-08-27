@@ -53,9 +53,11 @@ export default function ReportesGlobalPage() {
   const filteredReports = reports.filter((r) => {
     const matchesClient = selectedClientId === 'ALL' || r.clientId === selectedClientId;
     const matchesStatus = selectedStatus === 'ALL' || r.status === selectedStatus;
+    const clientName = r.client?.name || '';
+    const reportTitle = r.title || '';
     const matchesSearch =
-      r.title.toLowerCase().includes(search.toLowerCase()) ||
-      r.client.name.toLowerCase().includes(search.toLowerCase());
+      reportTitle.toLowerCase().includes(search.toLowerCase()) ||
+      clientName.toLowerCase().includes(search.toLowerCase());
     return matchesClient && matchesStatus && matchesSearch;
   });
 
@@ -164,13 +166,13 @@ export default function ReportesGlobalPage() {
                 <tr key={report.id} className="hover:bg-zinc-800/30 transition-colors">
                   <td className="p-4 font-semibold text-white flex items-center gap-2.5">
                     <div className="h-7 w-7 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-[10px] overflow-hidden shrink-0">
-                      {report.client.logo ? (
-                        <img src={report.client.logo} alt={report.client.name} className="h-full w-full object-cover" />
+                      {report.client?.logo ? (
+                        <img src={report.client.logo} alt={report.client?.name || 'Cliente'} className="h-full w-full object-cover" />
                       ) : (
-                        report.client.name.slice(0, 2).toUpperCase()
+                        (report.client?.name || 'DA').slice(0, 2).toUpperCase()
                       )}
                     </div>
-                    <span>{report.client.name}</span>
+                    <span>{report.client?.name || 'Cliente Davila PM'}</span>
                   </td>
                   <td className="p-4 font-medium text-zinc-200">{report.title}</td>
                   <td className="p-4 text-zinc-400">
