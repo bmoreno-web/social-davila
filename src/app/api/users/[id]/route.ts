@@ -5,7 +5,7 @@ import * as bcrypt from 'bcryptjs';
 
 export async function PUT(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSession();
@@ -13,7 +13,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Solo administradores pueden modificar usuarios' }, { status: 403 });
     }
 
-    const { id } = await context.params;
+    const { id } = await params;
     const body = await req.json();
     const { name, email, password, role, clientId, active } = body;
 
@@ -62,7 +62,7 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSession();
@@ -70,7 +70,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Solo administradores pueden eliminar usuarios' }, { status: 403 });
     }
 
-    const { id } = await context.params;
+    const { id } = await params;
 
     if (id === session.userId) {
       return NextResponse.json({ error: 'No puedes eliminar tu propia cuenta en sesión' }, { status: 400 });

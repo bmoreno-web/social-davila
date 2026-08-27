@@ -6,7 +6,7 @@ import { getMockPostsForBrand } from '@/lib/metricool/mock';
 
 export async function POST(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now();
   try {
@@ -15,7 +15,7 @@ export async function POST(
       return NextResponse.json({ error: 'No autorizado para ejecutar sincronizaciones' }, { status: 403 });
     }
 
-    const { id } = await context.params;
+    const { id } = await params;
 
     const client = await prisma.client.findUnique({
       where: { id },

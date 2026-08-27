@@ -5,11 +5,11 @@ import { getMockPostsForBrand } from '@/lib/metricool/mock';
 
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const resolvedParams = context?.params ? (await context.params) : { id: '' };
-    const id = resolvedParams.id || '';
+    const resolved = await params;
+    const id = resolved?.id || '';
 
     const { searchParams } = new URL(req.url);
     const platform = searchParams.get('platform') || 'ALL'; // ALL, INSTAGRAM, FACEBOOK, etc.
@@ -80,7 +80,7 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSession();
@@ -88,8 +88,8 @@ export async function PATCH(
       return NextResponse.json({ error: 'No autorizado para editar publicaciones' }, { status: 403 });
     }
 
-    const resolvedParams = context?.params ? (await context.params) : { id: '' };
-    const id = resolvedParams.id || '';
+    const resolved = await params;
+    const id = resolved?.id || '';
     const body = await req.json();
     const { postId, mediaUrl, permalink, caption } = body;
 

@@ -4,11 +4,11 @@ import { generateTimelineMetrics } from '@/lib/metricool/mock';
 
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const resolvedParams = context?.params ? (await context.params) : { id: '' };
-    const id = resolvedParams.id || '';
+    const resolved = await params;
+    const id = resolved?.id || '';
 
     const { searchParams } = new URL(req.url);
     const range = searchParams.get('range') || '30d';
