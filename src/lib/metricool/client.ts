@@ -82,23 +82,34 @@ export class MetricoolService {
       const rawPosts: MetricoolPostItem[] = Array.isArray(res) ? res : (res?.data || []);
 
       return rawPosts.map((post, idx) => {
-        const publishedDate = post.created?.dateTime || (post.timestamp ? new Date(post.timestamp).toISOString() : new Date().toISOString());
-        const likes = post.likes ?? post.like ?? post.reactions ?? 0;
-        const comments = post.comments ?? 0;
-        const shares = post.shares ?? 0;
-        const saves = post.saves ?? 0;
-        const reach = post.reach ?? post.impressions ?? (likes + comments) * 10;
-        const impressions = post.impressions ?? reach;
-        const totalInteractions = likes + comments + shares + saves;
-        const engagementRate = reach > 0 ? Number(((totalInteractions / reach) * 100).toFixed(2)) : (post.engagement || 0);
+        const publishedDate =
+          post.publishedAt?.dateTime ||
+          post.created?.dateTime ||
+          (post.timestamp ? new Date(post.timestamp).toISOString() : new Date().toISOString());
+
+        const likes = Number(post.likes ?? post.like ?? post.reactions ?? 0);
+        const comments = Number(post.comments ?? 0);
+        const shares = Number(post.shares ?? 0);
+        const saves = Number(post.saved ?? post.saves ?? 0);
+        const totalInteractions = Number(post.interactions ?? (likes + comments + shares + saves));
+        const reach = Number(post.reach ?? post.impressionsTotal ?? post.views ?? Math.max(1, totalInteractions * 10));
+        const impressions = Number(post.impressionsTotal ?? post.impressions ?? post.views ?? reach);
+        const engagementRate = post.engagement !== undefined
+          ? Number(Number(post.engagement).toFixed(2))
+          : reach > 0
+          ? Number(((totalInteractions / reach) * 100).toFixed(2))
+          : 0;
+
+        const mediaUrl = post.imageUrl || post.picture || post.mediaUrl || post.url || post.link;
+        const permalink = post.url || post.link || post.permalink;
 
         return {
-          id: post.postId || `post-${network}-${blogId}-${idx}`,
+          id: post.postId || post.id || `post-${network}-${blogId}-${idx}`,
           platform: network.toUpperCase() as any,
           publishedAt: publishedDate,
-          caption: post.text || 'Sin descripción',
-          mediaUrl: post.mediaUrl || post.picture || post.link,
-          thumbnailUrl: post.thumbnailUrl || post.picture,
+          caption: post.content || post.text || post.message || post.caption || 'Publicación en redes sociales',
+          mediaUrl: mediaUrl,
+          thumbnailUrl: mediaUrl,
           postType: post.type || 'post',
           likes,
           comments,
@@ -107,7 +118,7 @@ export class MetricoolService {
           reach,
           impressions,
           engagementRate,
-          permalink: post.link
+          permalink: permalink
         };
       });
     } catch (error) {
@@ -138,26 +149,37 @@ export class MetricoolService {
       });
 
       const res = await this.request<any>(`/v2/analytics/reels/${network}?${query.toString()}`);
-      const rawPosts: MetricoolPostItem[] = Array.isArray(res) ? res : (res?.data || []);
+      const rawPosts: any[] = Array.isArray(res) ? res : (res?.data || []);
 
       return rawPosts.map((reel, idx) => {
-        const publishedDate = reel.created?.dateTime || (reel.timestamp ? new Date(reel.timestamp).toISOString() : new Date().toISOString());
-        const likes = reel.likes ?? reel.reactions ?? 0;
-        const comments = reel.comments ?? 0;
-        const shares = reel.shares ?? 0;
-        const saves = reel.saves ?? 0;
-        const reach = reel.reach ?? (reel.videoViews || 0);
-        const impressions = reel.impressions ?? reach;
-        const totalInteractions = likes + comments + shares + saves;
-        const engagementRate = reach > 0 ? Number(((totalInteractions / reach) * 100).toFixed(2)) : (reel.engagement || 0);
+        const publishedDate =
+          reel.publishedAt?.dateTime ||
+          reel.created?.dateTime ||
+          (reel.timestamp ? new Date(reel.timestamp).toISOString() : new Date().toISOString());
+
+        const likes = Number(reel.likes ?? reel.reactions ?? 0);
+        const comments = Number(reel.comments ?? 0);
+        const shares = Number(reel.shares ?? 0);
+        const saves = Number(reel.saved ?? reel.saves ?? 0);
+        const totalInteractions = Number(reel.interactions ?? (likes + comments + shares + saves));
+        const reach = Number(reel.reach ?? reel.videoViews ?? reel.views ?? Math.max(1, totalInteractions * 10));
+        const impressions = Number(reel.impressionsTotal ?? reel.impressions ?? reel.views ?? reach);
+        const engagementRate = reel.engagement !== undefined
+          ? Number(Number(reel.engagement).toFixed(2))
+          : reach > 0
+          ? Number(((totalInteractions / reach) * 100).toFixed(2))
+          : 0;
+
+        const mediaUrl = reel.imageUrl || reel.picture || reel.mediaUrl || reel.url || reel.link;
+        const permalink = reel.url || reel.link || reel.permalink;
 
         return {
-          id: reel.postId || `reel-${network}-${blogId}-${idx}`,
+          id: reel.reelId || reel.postId || `reel-${network}-${blogId}-${idx}`,
           platform: network.toUpperCase() as any,
           publishedAt: publishedDate,
-          caption: reel.text || 'Reel de video',
-          mediaUrl: reel.mediaUrl || reel.picture || reel.link,
-          thumbnailUrl: reel.thumbnailUrl || reel.picture,
+          caption: reel.content || reel.text || reel.caption || 'Reel de video',
+          mediaUrl: mediaUrl,
+          thumbnailUrl: mediaUrl,
           postType: 'reel',
           likes,
           comments,
@@ -166,7 +188,7 @@ export class MetricoolService {
           reach,
           impressions,
           engagementRate,
-          permalink: reel.link
+          permalink: permalink
         };
       });
     } catch (error) {

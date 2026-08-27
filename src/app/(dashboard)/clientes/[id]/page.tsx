@@ -105,6 +105,9 @@ function PostCardItem({
             <img
               src={imgSrc}
               alt="Post preview"
+              referrerPolicy="no-referrer"
+              crossOrigin="anonymous"
+              loading="lazy"
               onError={handleImgError}
               className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
@@ -1204,6 +1207,8 @@ export default function ClienteDetallePage({
                 <img
                   src={selectedPostModal.mediaUrl || selectedPostModal.thumbnailUrl || FALLBACK_POST_IMAGES[0]}
                   alt="Post preview"
+                  referrerPolicy="no-referrer"
+                  crossOrigin="anonymous"
                   onError={(e: any) => {
                     e.currentTarget.onerror = null;
                     e.currentTarget.src = FALLBACK_POST_IMAGES[0];
