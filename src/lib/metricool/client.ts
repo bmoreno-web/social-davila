@@ -6,6 +6,8 @@ import {
   UnifiedMetricTimeline
 } from './types';
 
+import { prisma } from '@/lib/db/prisma';
+
 export class MetricoolService {
   private apiKey: string;
   private baseUrl: string;
@@ -15,8 +17,21 @@ export class MetricoolService {
     this.baseUrl = (process.env.METRICOOL_API_BASE_URL || 'https://app.metricool.com/api').replace(/\/$/, '');
   }
 
+  private async getEffectiveApiKey(): Promise<string> {
+    try {
+      const dbSetting = await prisma.systemSetting.findUnique({
+        where: { key: 'METRICOOL_API_KEY' }
+      });
+      if (dbSetting?.value && dbSetting.value.trim().length > 0) {
+        return dbSetting.value.trim();
+      }
+    } catch (e) {}
+    return this.apiKey;
+  }
+
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = endpoint.startsWith('http') ? endpoint : `${this.baseUrl}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+    const effectiveKey = await this.getEffectiveApiKey();
 
     try {
       const response = await fetch(url, {
@@ -24,7 +39,7 @@ export class MetricoolService {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
-          'X-Mc-Auth': this.apiKey,
+          'X-Mc-Auth': effectiveKey,
           'User-Agent': 'DavilaPMSocial/1.0',
           ...(options.headers || {})
         },
