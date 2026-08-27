@@ -113,7 +113,16 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta, sin texto extra
   ]
 }`;
 
-    const apiKey = (process.env.GEMINI_API_KEY || '').trim();
+    let apiKey = (process.env.GEMINI_API_KEY || '').trim();
+    try {
+      const dbSetting = await prisma.systemSetting.findUnique({
+        where: { key: 'GEMINI_API_KEY' }
+      });
+      if (dbSetting?.value) {
+        apiKey = dbSetting.value.trim();
+      }
+    } catch (e) {}
+
     let generatedAnalysis = '';
     let generatedRecommendations: any[] = [];
     let usedModel = 'Motor Estratégico Cuantitativo Davila PM';

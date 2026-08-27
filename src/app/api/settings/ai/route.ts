@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth/session';
+import { prisma } from '@/lib/db/prisma';
 import fs from 'fs';
 import path from 'path';
 
@@ -10,7 +11,19 @@ export async function GET() {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY || '';
+    let apiKey = process.env.GEMINI_API_KEY || '';
+
+    try {
+      const dbSetting = await prisma.systemSetting.findUnique({
+        where: { key: 'GEMINI_API_KEY' }
+      });
+      if (dbSetting?.value) {
+        apiKey = dbSetting.value;
+      }
+    } catch (e) {
+      console.warn('Could not read GEMINI_API_KEY from DB:', e);
+    }
+
     const hasKey = !!apiKey && apiKey.trim().length > 0;
 
     return NextResponse.json({
@@ -33,7 +46,20 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const { action, apiKey } = body;
-    const keyToTest = (apiKey || process.env.GEMINI_API_KEY || '').trim();
+    let keyToTest = (apiKey || '').trim();
+
+    if (!keyToTest) {
+      try {
+        const dbSetting = await prisma.systemSetting.findUnique({
+          where: { key: 'GEMINI_API_KEY' }
+        });
+        if (dbSetting?.value) keyToTest = dbSetting.value;
+      } catch (e) {}
+    }
+
+    if (!keyToTest) {
+      keyToTest = (process.env.GEMINI_API_KEY || '').trim();
+    }
 
     if (!keyToTest) {
       return NextResponse.json({ success: false, error: 'Ingresa una clave API de Google Gemini' }, { status: 400 });
@@ -91,25 +117,40 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'save') {
-      // Update .env in project root
-      const envPath = path.join(process.cwd(), '.env');
-      let envContent = '';
-      if (fs.existsSync(envPath)) {
-        envContent = fs.readFileSync(envPath, 'utf8');
+      // 1. Persist to Supabase PostgreSQL database
+      try {
+        await prisma.systemSetting.upsert({
+          where: { key: 'GEMINI_API_KEY' },
+          update: { value: keyToTest },
+          create: { key: 'GEMINI_API_KEY', value: keyToTest }
+        });
+      } catch (dbErr) {
+        console.warn('Warning saving setting to DB:', dbErr);
       }
 
-      if (envContent.includes('GEMINI_API_KEY=')) {
-        envContent = envContent.replace(/GEMINI_API_KEY=.*/g, `GEMINI_API_KEY="${keyToTest}"`);
-      } else {
-        envContent += `\nGEMINI_API_KEY="${keyToTest}"\n`;
-      }
-
-      fs.writeFileSync(envPath, envContent, 'utf8');
+      // 2. Update current runtime process memory
       process.env.GEMINI_API_KEY = keyToTest;
+
+      // 3. Try to update local .env file (if running locally; safely ignore if read-only on serverless)
+      try {
+        const envPath = path.join(process.cwd(), '.env');
+        if (fs.existsSync(envPath)) {
+          let envContent = fs.readFileSync(envPath, 'utf8');
+          if (envContent.includes('GEMINI_API_KEY=')) {
+            envContent = envContent.replace(/GEMINI_API_KEY=.*/g, `GEMINI_API_KEY="${keyToTest}"`);
+          } else {
+            envContent += `\nGEMINI_API_KEY="${keyToTest}"\n`;
+          }
+          fs.writeFileSync(envPath, envContent, 'utf8');
+        }
+      } catch (fsErr) {
+        // Ignored on Serverless read-only filesystems (Vercel)
+        console.info('Serverless read-only filesystem detected, saved to PostgreSQL instead.');
+      }
 
       return NextResponse.json({
         success: true,
-        message: 'Clave de Google Gemini guardada exitosamente en el servidor.'
+        message: '¡Clave de Google Gemini guardada exitosamente en la base de datos Supabase!'
       });
     }
 

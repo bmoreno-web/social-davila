@@ -161,3 +161,9 @@ model SyncLog {
   durationMs Int      @default(0)
   createdAt  DateTime @default(now())
 }
+
+model SystemSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
