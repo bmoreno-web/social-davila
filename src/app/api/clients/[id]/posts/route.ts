@@ -4,15 +4,58 @@ import { getSession } from '@/lib/auth/session';
 import { metricoolService } from '@/lib/metricool/client';
 import { getMockPostsForBrand } from '@/lib/metricool/mock';
 
-const BRAND_METRICOOL_MAP: Record<string, { blogId: string; userId: string; name: string }> = {
-  'cmtag1oha0000t0g80a05ym3q': { blogId: '2930665', userId: '1395490', name: 'Acesco Colombia' },
-  'cmtag1on80003t0g8l4a3cliz': { blogId: '4056236', userId: '1395490', name: 'Dávila P&M' },
-  'cmtag1ow70008t0g8f2fgh1yd': { blogId: '3996019', userId: '1395490', name: 'Hospital Serena del Mar' },
-  'cmtag1oyx000at0g8h2fuyif8': { blogId: '4058165', userId: '1395490', name: 'Zona Franca B/quilla' },
-  'cmtag1p0z000ct0g8w9h3k2lm': { blogId: '4058776', userId: '1395490', name: 'Eduardo Verano De la Rosa' },
-  'cmtag1p4a000et0g8gbyk9m1m': { blogId: '4588040', userId: '1395490', name: 'Charles Chapman' },
-  'cmtag1p7q000gt0g8k86l2mfr': { blogId: '4559324', userId: '1395490', name: 'OG Realty Partners' }
+interface BrandConfig {
+  blogId: string;
+  userId: string;
+  name: string;
+  networks: ('instagram' | 'facebook' | 'tiktok' | 'linkedin')[];
+}
+
+const BRAND_CONFIGS: Record<string, BrandConfig> = {
+  // Acesco
+  'cmtag1oha0000t0g80a05ym3q': { blogId: '2930665', userId: '1395490', name: 'Acesco Colombia', networks: ['instagram', 'facebook'] },
+  'acesco-colombia': { blogId: '2930665', userId: '1395490', name: 'Acesco Colombia', networks: ['instagram', 'facebook'] },
+  'client-acesco': { blogId: '2930665', userId: '1395490', name: 'Acesco Colombia', networks: ['instagram', 'facebook'] },
+
+  // Dávila P&M
+  'cmtag1on80003t0g8l4a3cliz': { blogId: '4056236', userId: '1395490', name: 'Dávila P&M', networks: ['instagram'] },
+  'davila-pm': { blogId: '4056236', userId: '1395490', name: 'Dávila P&M', networks: ['instagram'] },
+  'client-davila': { blogId: '4056236', userId: '1395490', name: 'Dávila P&M', networks: ['instagram'] },
+
+  // Hospital Serena del Mar
+  'cmtag1ow70008t0g8f2fgh1yd': { blogId: '3996019', userId: '1395490', name: 'Hospital Serena del Mar', networks: ['facebook'] },
+  'hospital-serena-del-mar': { blogId: '3996019', userId: '1395490', name: 'Hospital Serena del Mar', networks: ['facebook'] },
+  'client-serena': { blogId: '3996019', userId: '1395490', name: 'Hospital Serena del Mar', networks: ['facebook'] },
+
+  // Zona Franca Barranquilla
+  'cmtag1oyx000at0g8h2fuyif8': { blogId: '4058165', userId: '1395490', name: 'Zona Franca B/quilla', networks: ['instagram', 'facebook'] },
+  'zona-franca-barranquilla': { blogId: '4058165', userId: '1395490', name: 'Zona Franca B/quilla', networks: ['instagram', 'facebook'] },
+  'client-zfbaq': { blogId: '4058165', userId: '1395490', name: 'Zona Franca B/quilla', networks: ['instagram', 'facebook'] },
+
+  // Eduardo Verano
+  'cmtag1p0z000ct0g8w9h3k2lm': { blogId: '4058776', userId: '1395490', name: 'Eduardo Verano De la Rosa', networks: ['tiktok'] },
+  'eduardo-verano': { blogId: '4058776', userId: '1395490', name: 'Eduardo Verano De la Rosa', networks: ['tiktok'] },
+
+  // Charles Chapman
+  'cmtag1p4a000et0g8gbyk9m1m': { blogId: '4588040', userId: '1395490', name: 'Charles Chapman', networks: ['linkedin'] },
+  'charles-chapman': { blogId: '4588040', userId: '1395490', name: 'Charles Chapman', networks: ['linkedin'] },
+
+  // OG Realty Partners
+  'cmtag1p7q000gt0g8k86l2mfr': { blogId: '4559324', userId: '1395490', name: 'OG Realty Partners', networks: ['instagram'] },
+  'og-realty-partners': { blogId: '4559324', userId: '1395490', name: 'OG Realty Partners', networks: ['instagram'] }
 };
+
+function resolveBrandConfig(id: string): BrandConfig {
+  if (BRAND_CONFIGS[id]) return BRAND_CONFIGS[id];
+  const lower = id.toLowerCase();
+  if (lower.includes('davila')) return BRAND_CONFIGS['cmtag1on80003t0g8l4a3cliz'];
+  if (lower.includes('serena')) return BRAND_CONFIGS['cmtag1ow70008t0g8f2fgh1yd'];
+  if (lower.includes('zona') || lower.includes('zfbaq')) return BRAND_CONFIGS['cmtag1oyx000at0g8h2fuyif8'];
+  if (lower.includes('verano')) return BRAND_CONFIGS['cmtag1p0z000ct0g8w9h3k2lm'];
+  if (lower.includes('chapman')) return BRAND_CONFIGS['cmtag1p4a000et0g8gbyk9m1m'];
+  if (lower.includes('og') || lower.includes('realty')) return BRAND_CONFIGS['cmtag1p7q000gt0g8k86l2mfr'];
+  return BRAND_CONFIGS['cmtag1oha0000t0g80a05ym3q'];
+}
 
 export async function GET(
   req: NextRequest,
@@ -30,45 +73,61 @@ export async function GET(
     const limit = parseInt(searchParams.get('limit') || '50', 10);
 
     const now = new Date();
-    const fromDate = fromParam || new Date(now.getTime() - 60 * 86400000).toISOString().split('T')[0];
+    // Default to last 90 days to capture all recent active campaigns
+    const fromDate = fromParam || new Date(now.getTime() - 90 * 86400000).toISOString().split('T')[0];
     const toDate = toParam || now.toISOString().split('T')[0];
 
+    const brand = resolveBrandConfig(id);
     let posts: any[] = [];
 
-    // 1. Try to fetch LIVE real posts directly from Metricool API
-    const brandMeta = BRAND_METRICOOL_MAP[id] || Object.values(BRAND_METRICOOL_MAP).find(b => b.name.toLowerCase().includes(id.toLowerCase())) || BRAND_METRICOOL_MAP['cmtag1oha0000t0g80a05ym3q'];
-
-    if (brandMeta?.blogId) {
+    // 1. Query Metricool API live for this specific brand and its networks
+    if (brand.blogId) {
       try {
         const networksToFetch = platform === 'ALL'
-          ? ['instagram', 'facebook']
-          : [platform.toLowerCase()];
+          ? brand.networks
+          : [platform.toLowerCase() as any];
 
         const liveResults = await Promise.all(
-          networksToFetch.map(async (net) => {
-            const [netPosts, netReels] = await Promise.all([
-              metricoolService.getPosts(brandMeta.blogId, brandMeta.userId, net as any, fromDate, toDate).catch(() => []),
-              (net === 'instagram' || net === 'facebook')
-                ? metricoolService.getReels(brandMeta.blogId, brandMeta.userId, net as any, fromDate, toDate).catch(() => [])
-                : Promise.resolve([])
-            ]);
-            return [...netPosts, ...netReels];
+          networksToFetch.map(async (net: string) => {
+            try {
+              const [netPosts, netReels] = await Promise.all([
+                metricoolService.getPosts(brand.blogId, brand.userId, net as any, fromDate, toDate).catch(() => []),
+                (net === 'instagram' || net === 'facebook')
+                  ? metricoolService.getReels(brand.blogId, brand.userId, net as any, fromDate, toDate).catch(() => [])
+                  : Promise.resolve([])
+              ]);
+              return [...netPosts, ...netReels];
+            } catch (e) {
+              return [];
+            }
           })
         );
 
         const flattened = liveResults.flat();
         if (flattened.length > 0) {
-          posts = flattened.map((p) => ({
-            ...p,
-            clientId: id
-          }));
+          posts = flattened.map((p) => {
+            // Proxify image URLs from CDN to ensure zero-failure rendering in all browsers
+            const rawImg = p.mediaUrl || p.thumbnailUrl || '';
+            const proxiedImg = rawImg && rawImg.startsWith('http')
+              ? `/api/proxy-image?url=${encodeURIComponent(rawImg)}`
+              : rawImg;
+
+            return {
+              ...p,
+              mediaUrl: proxiedImg,
+              thumbnailUrl: proxiedImg,
+              rawMediaUrl: rawImg,
+              permalink: p.permalink,
+              clientId: id
+            };
+          });
         }
       } catch (metricoolErr) {
-        console.warn('Metricool live posts fetch warning:', metricoolErr);
+        console.warn(`Metricool live fetch for ${brand.name} warning:`, metricoolErr);
       }
     }
 
-    // 2. Fallback to DB or rich mock if Metricool has no posts in that window
+    // 2. If Metricool has 0 posts in this timeframe, fallback to DB if available
     if (!posts || posts.length === 0) {
       try {
         const whereClause: any = { clientId: id };
@@ -76,27 +135,17 @@ export async function GET(
           whereClause.platform = platform.toUpperCase();
         }
 
-        let orderByClause: any = { engagementRate: 'desc' };
-        if (sortBy === 'reach') orderByClause = { reach: 'desc' };
-        if (sortBy === 'likes') orderByClause = { likes: 'desc' };
-        if (sortBy === 'comments') orderByClause = { comments: 'desc' };
-        if (sortBy === 'shares') orderByClause = { shares: 'desc' };
-        if (sortBy === 'date') orderByClause = { publishedAt: 'desc' };
-
         posts = await prisma.reportPost.findMany({
           where: whereClause,
-          orderBy: orderByClause,
           take: limit
         });
-      } catch (dbErr) {
-        console.warn('Prisma posts query skipped on serverless:', dbErr);
-      }
+      } catch (dbErr) {}
     }
 
-    // 3. Fallback to mock posts for that specific brand
+    // 3. Fallback to tailored brand mock posts if still empty
     if (!posts || posts.length === 0) {
-      const defaultPlatform = platform !== 'ALL' ? platform : 'INSTAGRAM';
-      const samplePosts = getMockPostsForBrand(brandMeta?.name || 'Acesco Colombia', defaultPlatform);
+      const defaultPlatform = platform !== 'ALL' ? platform : (brand.networks[0]?.toUpperCase() || 'INSTAGRAM');
+      const samplePosts = getMockPostsForBrand(brand.name, defaultPlatform);
 
       posts = samplePosts.map((p, idx) => ({
         ...p,

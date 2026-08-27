@@ -70,15 +70,15 @@ function PostCardItem({
   idx: number;
   onOpenModal: (post: any) => void;
 }) {
-  const fallbackImg = FALLBACK_POST_IMAGES[idx % FALLBACK_POST_IMAGES.length];
-  const initialUrl = post.mediaUrl || post.thumbnailUrl || fallbackImg;
+  const initialUrl = post.mediaUrl || post.thumbnailUrl || '';
   const [imgSrc, setImgSrc] = useState<string>(initialUrl);
-  const [hasError, setHasError] = useState(false);
+  const [hasError, setHasError] = useState(!initialUrl);
 
   useEffect(() => {
-    setImgSrc(post.mediaUrl || post.thumbnailUrl || fallbackImg);
-    setHasError(false);
-  }, [post.mediaUrl, post.thumbnailUrl, fallbackImg]);
+    const url = post.mediaUrl || post.thumbnailUrl || '';
+    setImgSrc(url);
+    setHasError(!url);
+  }, [post.mediaUrl, post.thumbnailUrl]);
 
   const platformInfo = PLATFORM_INFO[post.platform] || {
     label: post.platform,
@@ -86,11 +86,7 @@ function PostCardItem({
   };
 
   const handleImgError = () => {
-    if (imgSrc !== fallbackImg) {
-      setImgSrc(fallbackImg);
-    } else {
-      setHasError(true);
-    }
+    setHasError(true);
   };
 
   return (
@@ -101,7 +97,7 @@ function PostCardItem({
       <div>
         {/* Media Preview */}
         <div className="h-48 w-full bg-gradient-to-br from-zinc-900 via-zinc-950 to-zinc-900 relative overflow-hidden flex items-center justify-center">
-          {!hasError ? (
+          {!hasError && imgSrc ? (
             <img
               src={imgSrc}
               alt="Post preview"
@@ -112,19 +108,24 @@ function PostCardItem({
               className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
           ) : (
-            <div className="h-full w-full p-4 flex flex-col justify-between bg-gradient-to-br from-purple-950/60 via-zinc-900 to-zinc-950 border-b border-zinc-800/60">
-              <div className="flex items-center gap-1.5 text-purple-400">
-                <Sparkles className="h-4 w-4" />
-                <span className="text-[11px] font-bold tracking-wide uppercase font-display">
-                  Davila Creative
+            <div className="h-full w-full p-5 flex flex-col justify-between bg-gradient-to-br from-purple-950/40 via-zinc-900 to-zinc-950 border-b border-zinc-800/60">
+              <div className="flex items-center justify-between text-purple-400">
+                <div className="flex items-center gap-1.5">
+                  <Sparkles className="h-4 w-4" />
+                  <span className="text-[10px] font-bold tracking-wider uppercase font-display">
+                    {post.platform || 'RED SOCIAL'}
+                  </span>
+                </div>
+                <span className="text-[10px] text-zinc-500 font-mono">
+                  {formatDateSpanish(post.publishedAt, 'd MMM')}
                 </span>
               </div>
-              <p className="text-xs text-zinc-300 line-clamp-3 font-medium italic">
-                &ldquo;{post.caption || 'Publicación estratégica destacada'}&rdquo;
+              <p className="text-xs text-zinc-200 line-clamp-4 font-medium leading-relaxed italic">
+                &ldquo;{post.caption || 'Publicación en redes sociales'}&rdquo;
               </p>
-              <div className="flex items-center justify-between text-[10px] text-zinc-400">
-                <span>{post.platform}</span>
-                <span className="font-semibold text-purple-300">Top Post</span>
+              <div className="flex items-center justify-between text-[10px] text-zinc-400 pt-2 border-t border-zinc-800/60">
+                <span className="font-semibold text-purple-300">Ver estadísticas</span>
+                <span>{post.likes ? `${formatNumber(post.likes)} likes` : 'Destacado'}</span>
               </div>
             </div>
           )}

@@ -79,9 +79,9 @@ export class MetricoolService {
       });
 
       const res = await this.request<any>(`/v2/analytics/posts/${network}?${query.toString()}`);
-      const rawPosts: MetricoolPostItem[] = Array.isArray(res) ? res : (res?.data || []);
+      const rawPosts: any[] = Array.isArray(res) ? res : (res?.data || []);
 
-      return rawPosts.map((post, idx) => {
+      return rawPosts.map((post: any, idx: number) => {
         const publishedDate =
           post.publishedAt?.dateTime ||
           post.created?.dateTime ||
