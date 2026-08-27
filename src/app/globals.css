@@ -80,64 +80,154 @@
   }
 }
 
-/* Light mode overrides for deep dark components */
+/* =========================================================================
+   COMPREHENSIVE LIGHT THEME ENGINE (LUXURY AGENCY AESTHETICS)
+   ========================================================================= */
+
 html.light body {
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
 }
 
-html.light .bg-zinc-950,
-html.light .bg-zinc-950\/80,
-html.light .bg-zinc-950\/90,
-html.light .bg-zinc-950\/60 {
+/* Layout headers and sidebars */
+html.light aside,
+html.light header {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.light header {
+  background: rgba(255, 255, 255, 0.88) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+/* Main background containers */
+html.light main,
+html.light .bg-\[\#07090e\],
+html.light .bg-\[\#090b10\],
+html.light .bg-\[\#0a0c13\] {
+  background-color: #f8fafc !important;
+}
+
+/* All zinc card backgrounds in light mode */
+html.light [class*="bg-zinc-950"] {
   background-color: #ffffff !important;
   color: #0f172a !important;
 }
 
-html.light .bg-zinc-900,
-html.light .bg-zinc-900\/80,
-html.light .bg-zinc-900\/70,
-html.light .bg-zinc-900\/60 {
+html.light [class*="bg-zinc-900"] {
+  background-color: #ffffff !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+}
+
+html.light [class*="bg-zinc-800"] {
   background-color: #f1f5f9 !important;
-  color: #0f172a !important;
 }
 
-html.light .bg-\[\#07090e\],
-html.light .bg-\[\#090b10\],
-html.light .bg-\[\#0a0c13\]\/80 {
-  background-color: #f8fafc !important;
+/* Hero gradient cards in light mode */
+html.light [class*="from-purple-950"] {
+  background: linear-gradient(135deg, #faf5ff 0%, #ffffff 50%, #f8fafc 100%) !important;
+  border-color: #e9d5ff !important;
 }
 
-html.light .border-zinc-800,
-html.light .border-zinc-800\/80,
-html.light .border-zinc-800\/60 {
+html.light [class*="from-emerald-950"] {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%) !important;
+  border-color: #bbf7d0 !important;
+}
+
+/* All zinc borders */
+html.light [class*="border-zinc-800"],
+html.light [class*="border-zinc-900"] {
   border-color: #e2e8f0 !important;
 }
 
-html.light .border-zinc-700,
-html.light .border-zinc-700\/80 {
+html.light [class*="border-zinc-700"] {
   border-color: #cbd5e1 !important;
 }
 
-html.light .text-white {
+/* Text color overrides */
+html.light .text-white,
+html.light [class*="text-white"] {
   color: #0f172a !important;
 }
 
-html.light .text-zinc-100,
-html.light .text-zinc-200 {
+html.light [class*="text-zinc-100"],
+html.light [class*="text-zinc-200"] {
   color: #1e293b !important;
 }
 
-html.light .text-zinc-300,
-html.light .text-zinc-400 {
+html.light [class*="text-zinc-300"],
+html.light [class*="text-zinc-400"] {
   color: #475569 !important;
 }
 
-html.light .text-zinc-500 {
+html.light [class*="text-zinc-500"] {
   color: #64748b !important;
 }
 
-/* Custom Editorial Agency Glassmorphism & Micro-animations */
+/* Form controls (Selects, Inputs, Textareas) */
+html.light select,
+html.light input,
+html.light textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+html.light select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Tables in light mode */
+html.light table thead tr {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.light table tbody tr {
+  border-color: #f1f5f9 !important;
+}
+
+html.light table tbody tr:hover {
+  background-color: #f8fafc !important;
+}
+
+/* Modals & Dialogs */
+html.light .fixed.inset-0.bg-black\/80 {
+  background-color: rgba(15, 23, 42, 0.6) !important;
+}
+
+html.light [class*="animate-scaleIn"],
+html.light .max-w-lg,
+html.light .max-w-2xl {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Recharts Charts */
+html.light .recharts-cartesian-grid line {
+  stroke: #e2e8f0 !important;
+}
+
+html.light .recharts-text {
+  fill: #64748b !important;
+}
+
+html.light .recharts-default-tooltip {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Editorial agency cards in light mode */
 .glass-panel {
   background: rgba(18, 21, 30, 0.75);
   backdrop-filter: blur(12px);
@@ -146,7 +236,7 @@ html.light .text-zinc-500 {
 }
 
 html.light .glass-panel {
-  background: rgba(255, 255, 255, 0.85) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
   border: 1px solid rgba(0, 0, 0, 0.08) !important;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
@@ -159,7 +249,7 @@ html.light .glass-panel {
 }
 
 html.light .glass-card {
-  background: rgba(255, 255, 255, 0.9) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
   border: 1px solid rgba(0, 0, 0, 0.06) !important;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
 }
@@ -169,7 +259,7 @@ html.light .glass-card {
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
 }
 
-/* Custom Scrollbar for sleek agency UI */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -180,12 +270,12 @@ html.light .glass-card {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(168, 85, 247, 0.2);
+  background: rgba(168, 85, 247, 0.25);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(168, 85, 247, 0.4);
+  background: rgba(168, 85, 247, 0.5);
 }
 
 /* Micro-animations */
