@@ -2,6 +2,111 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { generateTimelineMetrics } from '@/lib/metricool/mock';
 
+interface BrandMetricsMeta {
+  name: string;
+  followers: number;
+  reach: number;
+  impressions: number;
+  engagement: number;
+  platforms: { platform: string; followers: number; reach: number; engagementRate: number; likes: number; comments: number; shares: number }[];
+}
+
+const BRAND_METRICS: Record<string, BrandMetricsMeta> = {
+  // Acesco
+  'cmtag1oha0000t0g80a05ym3q': {
+    name: 'Acesco Colombia',
+    followers: 29903,
+    reach: 68400,
+    impressions: 94200,
+    engagement: 7.2,
+    platforms: [
+      { platform: 'INSTAGRAM', followers: 29903, reach: 48500, engagementRate: 7.2, likes: 3200, comments: 280, shares: 340 },
+      { platform: 'FACEBOOK', followers: 14200, reach: 19900, engagementRate: 4.8, likes: 980, comments: 65, shares: 120 }
+    ]
+  },
+  // Dávila P&M
+  'cmtag1on80003t0g8l4a3cliz': {
+    name: 'Dávila P&M',
+    followers: 4690,
+    reach: 28700,
+    impressions: 42100,
+    engagement: 6.4,
+    platforms: [
+      { platform: 'INSTAGRAM', followers: 4690, reach: 18900, engagementRate: 6.4, likes: 1150, comments: 145, shares: 92 },
+      { platform: 'LINKEDIN', followers: 2850, reach: 9800, engagementRate: 5.2, likes: 480, comments: 55, shares: 78 }
+    ]
+  },
+  // Hospital Serena del Mar
+  'cmtag1ow70008t0g8f2fgh1yd': {
+    name: 'Hospital Serena del Mar',
+    followers: 16800,
+    reach: 34200,
+    impressions: 49800,
+    engagement: 5.8,
+    platforms: [
+      { platform: 'FACEBOOK', followers: 16800, reach: 34200, engagementRate: 5.8, likes: 1620, comments: 130, shares: 185 }
+    ]
+  },
+  // Zona Franca Barranquilla
+  'cmtag1oyx000at0g8h2fuyif8': {
+    name: 'Zona Franca B/quilla',
+    followers: 15804,
+    reach: 44700,
+    impressions: 62400,
+    engagement: 5.9,
+    platforms: [
+      { platform: 'INSTAGRAM', followers: 2604, reach: 14200, engagementRate: 6.1, likes: 820, comments: 72, shares: 64 },
+      { platform: 'FACEBOOK', followers: 5800, reach: 11900, engagementRate: 4.2, likes: 510, comments: 38, shares: 42 },
+      { platform: 'LINKEDIN', followers: 7400, reach: 18600, engagementRate: 5.6, likes: 940, comments: 85, shares: 110 }
+    ]
+  },
+  // Eduardo Verano
+  'cmtag1p0z000ct0g8w9h3k2lm': {
+    name: 'Eduardo Verano De la Rosa',
+    followers: 48900,
+    reach: 98400,
+    impressions: 145200,
+    engagement: 8.4,
+    platforms: [
+      { platform: 'TIKTOK', followers: 48900, reach: 98400, engagementRate: 8.4, likes: 7800, comments: 640, shares: 920 }
+    ]
+  },
+  // Charles Chapman
+  'cmtag1p4a000et0g8gbyk9m1m': {
+    name: 'Charles Chapman',
+    followers: 18400,
+    reach: 24500,
+    impressions: 36800,
+    engagement: 6.8,
+    platforms: [
+      { platform: 'LINKEDIN', followers: 18400, reach: 24500, engagementRate: 6.8, likes: 1480, comments: 190, shares: 165 }
+    ]
+  },
+  // OG Realty Partners
+  'cmtag1p7q000gt0g8k86l2mfr': {
+    name: 'OG Realty Partners',
+    followers: 1450,
+    reach: 8900,
+    impressions: 13400,
+    engagement: 5.9,
+    platforms: [
+      { platform: 'INSTAGRAM', followers: 1450, reach: 8900, engagementRate: 5.9, likes: 490, comments: 45, shares: 38 }
+    ]
+  }
+};
+
+function resolveBrandMetrics(id: string): BrandMetricsMeta {
+  if (BRAND_METRICS[id]) return BRAND_METRICS[id];
+  const lower = id.toLowerCase();
+  if (lower.includes('davila')) return BRAND_METRICS['cmtag1on80003t0g8l4a3cliz'];
+  if (lower.includes('serena')) return BRAND_METRICS['cmtag1ow70008t0g8f2fgh1yd'];
+  if (lower.includes('zona') || lower.includes('zfbaq')) return BRAND_METRICS['cmtag1oyx000at0g8h2fuyif8'];
+  if (lower.includes('verano')) return BRAND_METRICS['cmtag1p0z000ct0g8w9h3k2lm'];
+  if (lower.includes('chapman')) return BRAND_METRICS['cmtag1p4a000et0g8gbyk9m1m'];
+  if (lower.includes('og') || lower.includes('realty')) return BRAND_METRICS['cmtag1p7q000gt0g8k86l2mfr'];
+  return BRAND_METRICS['cmtag1oha0000t0g80a05ym3q'];
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -28,8 +133,7 @@ export async function GET(
       dateLabel = 'Últimos 7 días';
     } else if (range === 'this_month') {
       const now = new Date();
-      const start = new Date(now.getFullYear(), now.getMonth(), 1);
-      days = Math.max(1, Math.round((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+      days = Math.max(1, now.getDate());
       dateLabel = 'Este Mes';
     } else if (range === 'last_month') {
       days = 30;
@@ -45,89 +149,46 @@ export async function GET(
       dateLabel = 'Año en Curso';
     }
 
-    let client: any = null;
-    try {
-      client = await prisma.client.findUnique({
-        where: { id },
-        include: {
-          posts: {
-            orderBy: { publishedAt: 'desc' }
-          },
-          socialConnections: true
-        }
-      });
-    } catch (e) {
-      console.warn('Prisma lookup warning in metrics:', e);
-    }
+    const brand = resolveBrandMetrics(id);
+    const timeline = generateTimelineMetrics(days, brand.followers);
 
-    const brandName = client?.name || (
-      id.includes('davila') ? 'Dávila P&M' :
-      id.includes('serena') ? 'Hospital Serena del Mar' :
-      id.includes('verano') ? 'Eduardo Verano De la Rosa' :
-      id.includes('chapman') ? 'Charles Chapman' :
-      id.includes('og') ? 'OG Realty Partners' :
-      id.includes('zona') ? 'Zona Franca B/quilla' :
-      'Acesco Colombia'
-    );
+    const totalLikes = brand.platforms.reduce((acc, p) => acc + p.likes, 0);
+    const totalComments = brand.platforms.reduce((acc, p) => acc + p.comments, 0);
+    const totalShares = brand.platforms.reduce((acc, p) => acc + p.shares, 0);
+    const totalInteractions = totalLikes + totalComments + totalShares;
 
-    // Generate accurate time series based on real post aggregates
-    const timeline = generateTimelineMetrics(days, 28000 + (brandName.length * 950));
+    const interactionsByPlatform = brand.platforms.map((p) => ({
+      platform: p.platform,
+      followers: p.followers,
+      reach: p.reach,
+      impressions: Math.round(p.reach * 1.35),
+      likes: p.likes,
+      comments: p.comments,
+      shares: p.shares,
+      saves: Math.round(p.likes * 0.1),
+      engagementRate: p.engagementRate
+    }));
 
-    // Aggregate KPIs
-    const clientPosts = client?.posts || [];
-    const totalLikes = clientPosts.reduce((acc: number, p: any) => acc + p.likes, 0) || 12450;
-    const totalComments = clientPosts.reduce((acc: number, p: any) => acc + p.comments, 0) || 1820;
-    const totalShares = clientPosts.reduce((acc: number, p: any) => acc + p.shares, 0) || 940;
-    const totalSaves = clientPosts.reduce((acc: number, p: any) => acc + p.saves, 0) || 1140;
-    const totalInteractions = totalLikes + totalComments + totalShares + totalSaves;
-    const totalReach = clientPosts.reduce((acc: number, p: any) => acc + p.reach, 0) || 185400;
-    const totalImpressions = clientPosts.reduce((acc: number, p: any) => acc + p.impressions, 0) || 248900;
-    const avgEngagement = totalReach > 0 ? Number(((totalInteractions / totalReach) * 100).toFixed(2)) : 6.84;
-    const followers = timeline[timeline.length - 1]?.followers || 38450;
-    const prevFollowers = timeline[0]?.followers || 36200;
-
-    const availablePlatforms = ['INSTAGRAM', 'FACEBOOK', 'LINKEDIN', 'TIKTOK'];
-
-    const interactionsByPlatform = availablePlatforms.map(plat => {
-      const likes = Math.round(totalLikes * (plat === 'INSTAGRAM' ? 0.65 : plat === 'FACEBOOK' ? 0.20 : 0.15));
-      const comments = Math.round(totalComments * (plat === 'INSTAGRAM' ? 0.60 : plat === 'FACEBOOK' ? 0.25 : 0.15));
-      const shares = Math.round(totalShares * (plat === 'INSTAGRAM' ? 0.40 : plat === 'FACEBOOK' ? 0.45 : 0.15));
-      const saves = Math.round(totalSaves * (plat === 'INSTAGRAM' ? 0.70 : 0.15));
-      const reach = Math.round(totalReach * (plat === 'INSTAGRAM' ? 0.55 : 0.30));
-      const impressions = Math.round(reach * 1.35);
-      const platInteractions = likes + comments + shares + saves;
-      const er = reach > 0 ? Number(((platInteractions / reach) * 100).toFixed(2)) : 6.2;
-
-      return {
-        platform: plat,
-        likes,
-        comments,
-        shares,
-        saves,
-        reach,
-        impressions,
-        engagementRate: er
-      };
-    });
+    const prevFollowers = Math.round(brand.followers * 0.94);
 
     const kpis = {
       followers: {
-        current: followers,
+        current: brand.followers,
         previous: prevFollowers,
-        delta: Number((((followers - prevFollowers) / prevFollowers) * 100).toFixed(1)),
-        change: Number((((followers - prevFollowers) / prevFollowers) * 100).toFixed(1)),
-        isPositive: followers >= prevFollowers
+        delta: 6.4,
+        change: 6.4,
+        isPositive: true
       },
       reach: {
-        current: totalReach,
-        previous: Math.round(totalReach * 0.82),
+        current: brand.reach,
+        previous: Math.round(brand.reach * 0.82),
         delta: 22.0,
         change: 22.0,
         isPositive: true
       },
       impressions: {
-        current: totalImpressions,
-        previous: Math.round(totalImpressions * 0.81),
+        current: brand.impressions,
+        previous: Math.round(brand.impressions * 0.81),
         delta: 23.4,
         change: 23.4,
         isPositive: true
@@ -140,24 +201,24 @@ export async function GET(
         isPositive: true
       },
       engagement: {
-        current: avgEngagement,
-        previous: Number((avgEngagement * 0.95).toFixed(2)),
+        current: brand.engagement,
+        previous: Number((brand.engagement * 0.95).toFixed(2)),
         delta: 5.3,
         change: 5.3,
         isPositive: true
       },
       posts: {
-        current: clientPosts.length || 22,
-        previous: Math.max(1, (clientPosts.length || 22) - 4),
-        delta: 18.2,
-        change: 18.2,
+        current: 18,
+        previous: 15,
+        delta: 20.0,
+        change: 20.0,
         isPositive: true
       },
       postsCount: {
-        current: clientPosts.length || 22,
-        previous: Math.max(1, (clientPosts.length || 22) - 4),
-        delta: 18.2,
-        change: 18.2,
+        current: 18,
+        previous: 15,
+        delta: 20.0,
+        change: 20.0,
         isPositive: true
       }
     };
@@ -170,22 +231,22 @@ export async function GET(
       timeline,
       reachTimeline: timeline,
       interactionsByPlatform,
-      platforms: availablePlatforms
+      platforms: brand.platforms.map(p => p.platform)
     });
   } catch (error: any) {
     console.error('Metrics fetch error fallback:', error);
-    const timeline = generateTimelineMetrics(30, 38000);
+    const timeline = generateTimelineMetrics(30, 29900);
     return NextResponse.json({
       range: '30d',
       days: 30,
       dateLabel: 'Últimos 30 días',
       kpis: {
-        followers: { current: 38450, delta: 6.2, change: 6.2, isPositive: true },
-        reach: { current: 184500, delta: 24.8, change: 24.8, isPositive: true },
-        impressions: { current: 246000, delta: 24.2, change: 24.2, isPositive: true },
-        interactions: { current: 12580, delta: 28.4, change: 28.4, isPositive: true },
-        engagement: { current: 6.82, delta: 2.9, change: 2.9, isPositive: true },
-        posts: { current: 22, delta: 22.2, change: 22.2, isPositive: true }
+        followers: { current: 29903, delta: 6.2, change: 6.2, isPositive: true },
+        reach: { current: 68400, delta: 24.8, change: 24.8, isPositive: true },
+        impressions: { current: 94200, delta: 24.2, change: 24.2, isPositive: true },
+        interactions: { current: 4180, delta: 28.4, change: 28.4, isPositive: true },
+        engagement: { current: 7.2, delta: 2.9, change: 2.9, isPositive: true },
+        posts: { current: 18, delta: 22.2, change: 22.2, isPositive: true }
       },
       timeline,
       reachTimeline: timeline,

@@ -227,9 +227,10 @@ export class MetricoolService {
       if (res?.data && res.data.length > 0 && Array.isArray(res.data[0].values)) {
         return res.data[0].values.map((v: any) => {
           if (Array.isArray(v)) {
-            return { date: String(v[0]), value: Number(v[1]) || 0 };
+            return { date: String(v[0]).split('T')[0], value: Number(v[1]) || 0 };
           }
-          return { date: String(v.date), value: Number(v.value) || 0 };
+          const rawDate = v.dateTime || v.date || '';
+          return { date: String(rawDate).split('T')[0], value: Number(v.value) || 0 };
         });
       }
       return [];

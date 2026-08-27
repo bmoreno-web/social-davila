@@ -14,8 +14,8 @@ const DEFAULT_BRANDS: Record<string, any> = {
     contactEmail: 'cliente@acesco.com',
     status: 'ACTIVE',
     socialConnections: [
-      { id: 'sc1', platform: 'INSTAGRAM', accountUsername: 'acescocol' },
-      { id: 'sc2', platform: 'FACEBOOK', accountUsername: 'Acesco Colombia' }
+      { id: 'sc1', platform: 'INSTAGRAM', accountUsername: 'acescocol', followers: 29903, reach: 48500, engagementRate: 7.2 },
+      { id: 'sc2', platform: 'FACEBOOK', accountUsername: 'Acesco Colombia', followers: 14200, reach: 22400, engagementRate: 4.8 }
     ],
     reports: [
       {
@@ -56,8 +56,8 @@ const DEFAULT_BRANDS: Record<string, any> = {
     contactEmail: 'ddigital@davilaweb.com',
     status: 'ACTIVE',
     socialConnections: [
-      { id: 'sc3', platform: 'INSTAGRAM', accountUsername: 'davilapublicidad' },
-      { id: 'sc4', platform: 'FACEBOOK', accountUsername: 'Dávila Publicidad & Marketing' }
+      { id: 'sc3', platform: 'INSTAGRAM', accountUsername: 'davilapublicidad', followers: 4690, reach: 18900, engagementRate: 6.4 },
+      { id: 'sc4', platform: 'LINKEDIN', accountUsername: 'Dávila Publicidad & Marketing', followers: 2850, reach: 9800, engagementRate: 5.2 }
     ],
     reports: [],
     recommendations: []
@@ -69,8 +69,11 @@ const DEFAULT_BRANDS: Record<string, any> = {
     industry: 'Salud & Medicina',
     logo: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=200&auto=format&fit=crop&q=80',
     metricoolBlogId: '3996019',
+    metricoolUserId: '1395490',
     status: 'ACTIVE',
-    socialConnections: [{ id: 'sc5', platform: 'FACEBOOK', accountUsername: 'Hospital Serena del Mar' }],
+    socialConnections: [
+      { id: 'sc5', platform: 'FACEBOOK', accountUsername: 'Hospital Serena del Mar', followers: 16800, reach: 34200, engagementRate: 5.8 }
+    ],
     reports: [],
     recommendations: []
   },
@@ -81,8 +84,13 @@ const DEFAULT_BRANDS: Record<string, any> = {
     industry: 'Comercio Exterior & Logística',
     logo: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=200&auto=format&fit=crop&q=80',
     metricoolBlogId: '4058165',
+    metricoolUserId: '1395490',
     status: 'ACTIVE',
-    socialConnections: [{ id: 'sc6', platform: 'INSTAGRAM', accountUsername: 'zfbaq' }],
+    socialConnections: [
+      { id: 'sc6', platform: 'INSTAGRAM', accountUsername: 'zfbaq', followers: 2604, reach: 14200, engagementRate: 6.1 },
+      { id: 'sc7', platform: 'FACEBOOK', accountUsername: 'Zona Franca de Barranquilla', followers: 5800, reach: 11900, engagementRate: 4.2 },
+      { id: 'sc8', platform: 'LINKEDIN', accountUsername: 'Zona Franca de Barranquilla', followers: 7400, reach: 18600, engagementRate: 5.6 }
+    ],
     reports: [],
     recommendations: []
   },
@@ -93,8 +101,11 @@ const DEFAULT_BRANDS: Record<string, any> = {
     industry: 'Sector Público & Liderazgo',
     logo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
     metricoolBlogId: '4058776',
+    metricoolUserId: '1395490',
     status: 'ACTIVE',
-    socialConnections: [{ id: 'sc7', platform: 'TIKTOK', accountUsername: 'veranodelarosa' }],
+    socialConnections: [
+      { id: 'sc9', platform: 'TIKTOK', accountUsername: 'veranodelarosa', followers: 48900, reach: 98400, engagementRate: 8.4 }
+    ],
     reports: [],
     recommendations: []
   },
@@ -105,8 +116,11 @@ const DEFAULT_BRANDS: Record<string, any> = {
     industry: 'Legal & Corporativo',
     logo: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200&auto=format&fit=crop&q=80',
     metricoolBlogId: '4588040',
+    metricoolUserId: '1395490',
     status: 'ACTIVE',
-    socialConnections: [{ id: 'sc8', platform: 'LINKEDIN', accountUsername: 'Charles Chapman' }],
+    socialConnections: [
+      { id: 'sc10', platform: 'LINKEDIN', accountUsername: 'Charles Chapman', followers: 18400, reach: 24500, engagementRate: 6.8 }
+    ],
     reports: [],
     recommendations: []
   },
@@ -117,8 +131,11 @@ const DEFAULT_BRANDS: Record<string, any> = {
     industry: 'Bienes Raíces & Inversión',
     logo: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=200&auto=format&fit=crop&q=80',
     metricoolBlogId: '4559324',
+    metricoolUserId: '1395490',
     status: 'ACTIVE',
-    socialConnections: [{ id: 'sc9', platform: 'INSTAGRAM', accountUsername: 'ogrealty' }],
+    socialConnections: [
+      { id: 'sc11', platform: 'INSTAGRAM', accountUsername: 'ogrealtypartners', followers: 1450, reach: 8900, engagementRate: 5.9 }
+    ],
     reports: [],
     recommendations: []
   }
@@ -157,10 +174,15 @@ export async function GET(
     }
 
     if (!client) {
-      client = DEFAULT_BRANDS[id] || Object.values(DEFAULT_BRANDS).find((b: any) => b.slug === id || b.id === id) || {
-        ...DEFAULT_BRANDS['cmtag1oha0000t0g80a05ym3q'],
-        id: id || 'cmtag1oha0000t0g80a05ym3q'
-      };
+      const lower = id.toLowerCase();
+      client = DEFAULT_BRANDS[id] ||
+        (lower.includes('davila') ? DEFAULT_BRANDS['cmtag1on80003t0g8l4a3cliz'] :
+         lower.includes('serena') ? DEFAULT_BRANDS['cmtag1ow70008t0g8f2fgh1yd'] :
+         lower.includes('zona') || lower.includes('zfbaq') ? DEFAULT_BRANDS['cmtag1oyx000at0g8h2fuyif8'] :
+         lower.includes('verano') ? DEFAULT_BRANDS['cmtag1p0z000ct0g8w9h3k2lm'] :
+         lower.includes('chapman') ? DEFAULT_BRANDS['cmtag1p4a000et0g8gbyk9m1m'] :
+         lower.includes('og') || lower.includes('realty') ? DEFAULT_BRANDS['cmtag1p7q000gt0g8k86l2mfr'] :
+         DEFAULT_BRANDS['cmtag1oha0000t0g80a05ym3q']);
     }
 
     return NextResponse.json({ client });
