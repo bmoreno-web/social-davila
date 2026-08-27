@@ -255,6 +255,17 @@ export default function ClienteDetallePage({
     setIsMounted(true);
   }, []);
 
+  useEffect(() => {
+    if (selectedPostModal || showRecModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [selectedPostModal, showRecModal]);
+
   const loadData = async () => {
     try {
       setIsLoading(true);
@@ -1101,8 +1112,8 @@ export default function ClienteDetallePage({
 
       {/* Recommendation Creation Modal */}
       {showRecModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 w-full max-w-md shadow-2xl">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto animate-fadeIn">
+          <div className="relative my-auto w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-2xl animate-modalScale">
             <h2 className="text-base font-bold text-white font-display mb-1">Nueva Recomendación</h2>
             <p className="text-xs text-zinc-400 mb-4">
               Agrega una directriz estratégica clasificada por categoría y nivel de prioridad.
@@ -1182,8 +1193,8 @@ export default function ClienteDetallePage({
 
       {/* Interactive Post Viewer & Customization Modal */}
       {selectedPostModal && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fadeIn">
-          <div className="bg-zinc-950 border border-zinc-800 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto animate-fadeIn">
+          <div className="relative my-auto w-full max-w-2xl bg-zinc-950 border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[88vh] animate-modalScale">
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-zinc-800/80 flex items-center justify-between bg-zinc-900/60">
               <div className="flex items-center gap-2.5">

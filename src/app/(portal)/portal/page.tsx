@@ -213,6 +213,17 @@ export default function ClientPortalHomePage() {
     setIsMounted(true);
   }, []);
 
+  useEffect(() => {
+    if (selectedPostModal || isContactModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [selectedPostModal, isContactModalOpen]);
+
   const loadInitialData = async () => {
     try {
       setIsLoading(true);
@@ -774,8 +785,8 @@ export default function ClientPortalHomePage() {
 
       {/* Contact Advisor Modal */}
       {isContactModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-zinc-950 border border-zinc-800 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh] animate-scaleIn">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto animate-fadeIn">
+          <div className="relative my-auto w-full max-w-lg bg-zinc-950 border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[88vh] animate-modalScale">
             <div className="px-6 py-4 border-b border-zinc-800/80 flex items-center justify-between bg-zinc-900/60">
               <div className="flex items-center gap-2">
                 <Headphones className="h-4 w-4 text-purple-400" />
@@ -879,8 +890,8 @@ export default function ClientPortalHomePage() {
 
       {/* Post Modal Preview */}
       {selectedPostModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-zinc-950 border border-zinc-800 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh] animate-scaleIn">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto animate-fadeIn">
+          <div className="relative my-auto w-full max-w-lg bg-zinc-950 border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[88vh] animate-modalScale">
             <div className="px-6 py-4 border-b border-zinc-800/80 flex items-center justify-between bg-zinc-900/60">
               <span className="text-xs font-bold text-white uppercase">{selectedPostModal.platform}</span>
               <button

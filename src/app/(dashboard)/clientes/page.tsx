@@ -252,8 +252,8 @@ export default function ClientesPage() {
 
       {/* New Client Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto animate-fadeIn">
+          <div className="relative my-auto w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-2xl animate-modalScale">
             <h2 className="text-lg font-bold text-white font-display mb-1">Registrar Nuevo Cliente</h2>
             <p className="text-xs text-zinc-400 mb-4">
               Crea el perfil de cliente y asocia su ID de Metricool para sincronización automática.
