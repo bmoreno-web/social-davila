@@ -155,7 +155,7 @@ export default function ReporteDetallePage({
       </div>
 
       {/* DOCUMENT BODY */}
-      <div className="p-8 md:p-12 rounded-3xl bg-zinc-900/90 border border-zinc-800/90 shadow-2xl space-y-8">
+      <div className="p-8 md:p-12 rounded-3xl bg-zinc-900/90 border border-zinc-800/90 shadow-2xl space-y-8 print:p-0 print:border-none print:shadow-none print:bg-white print:space-y-6">
         {/* Report Header */}
         <div className="border-b border-zinc-800 pb-6 flex flex-col md:flex-row md:items-start justify-between gap-6">
           <div className="space-y-2">

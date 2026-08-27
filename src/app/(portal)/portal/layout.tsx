@@ -19,9 +19,9 @@ export default async function PortalLayout({
   }
 
   return (
-    <div className="min-h-screen bg-[#07090e] text-zinc-100 flex flex-col">
+    <div className="min-h-screen bg-[#07090e] text-zinc-100 flex flex-col print:bg-white print:text-slate-900 print:block">
       {/* Client Portal Header */}
-      <header className="h-16 px-6 md:px-10 border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-md flex items-center justify-between sticky top-0 z-30">
+      <header className="h-16 px-6 md:px-10 border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-md flex items-center justify-between sticky top-0 z-30 print:hidden">
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center text-white shadow-md shadow-purple-600/30">
             <span className="font-bold text-sm">D</span>
@@ -59,12 +59,12 @@ export default async function PortalLayout({
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 p-6 md:p-10 max-w-6xl w-full mx-auto">
+      <main className="flex-1 p-6 md:p-10 max-w-6xl w-full mx-auto print:p-0 print:m-0 print:max-w-none print:w-full">
         {children}
       </main>
 
       {/* Footer */}
-      <footer className="py-6 border-t border-zinc-800/80 text-center text-xs text-zinc-500">
+      <footer className="py-6 border-t border-zinc-800/80 text-center text-xs text-zinc-500 print:hidden">
         © 2026 Davila PM — Transformación Digital & Estrategia de Medios
       </footer>
     </div>

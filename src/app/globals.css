@@ -306,3 +306,104 @@ html.light .glass-card {
 .animate-modalScale {
   animation: modalScale 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* =========================================================================
+   EXECUTIVE PDF & PRINT ENGINE (ALWAYS CLEAN LIGHT THEME, NO SIDEBAR/MENU)
+   ========================================================================= */
+
+@media print {
+  /* 1. Hide all navigation, sidebars, headers, action buttons and decorations */
+  aside,
+  header,
+  nav,
+  .print\:hidden,
+  button,
+  .ThemeToggle,
+  footer,
+  ::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* 2. Global Document Reset */
+  html,
+  body,
+  main,
+  #root,
+  .min-h-screen {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+  }
+
+  /* 3. Force Exact High-Contrast Print Rendering */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* 4. Force all dark cards to white background with clean borders */
+  [class*="bg-zinc-"],
+  [class*="bg-\[\#"],
+  .glass-panel,
+  .glass-card {
+    background-color: #ffffff !important;
+    background-image: none !important;
+    border-color: #e2e8f0 !important;
+    color: #0f172a !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  [class*="from-purple-950"],
+  [class*="from-emerald-950"] {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+  }
+
+  /* 5. Clean Borders */
+  [class*="border-zinc-"],
+  [class*="border-purple-"] {
+    border-color: #cbd5e1 !important;
+  }
+
+  /* 6. High-Contrast Text */
+  .text-white,
+  [class*="text-white"],
+  [class*="text-zinc-100"],
+  [class*="text-zinc-200"] {
+    color: #0f172a !important;
+  }
+
+  [class*="text-zinc-300"],
+  [class*="text-zinc-400"] {
+    color: #334155 !important;
+  }
+
+  [class*="text-zinc-500"] {
+    color: #64748b !important;
+  }
+
+  /* 7. Recharts and Visual Graphs in Print */
+  .recharts-cartesian-grid line {
+    stroke: #e2e8f0 !important;
+  }
+
+  .recharts-text {
+    fill: #475569 !important;
+  }
+
+  /* 8. Avoid page breaks inside cards */
+  .p-8,
+  .p-6,
+  .rounded-3xl,
+  .rounded-2xl {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}
