@@ -24,6 +24,12 @@ export async function POST(
     }
 
     const { id } = await context.params;
+    let target = 'all'; // 'analysis' | 'recommendations' | 'all'
+    try {
+      const body = await req.json();
+      if (body?.target) target = body.target;
+    } catch (e) {}
+
     const brandInfo = BRAND_METRICS_MAP[id] || Object.values(BRAND_METRICS_MAP).find(b => b.name.toLowerCase().includes(id.toLowerCase())) || BRAND_METRICS_MAP['cmtag1oha0000t0g80a05ym3q'];
 
     let livePosts: any[] = [];
@@ -64,7 +70,7 @@ export async function POST(
     ).join('\n') || '• Publicaciones de video corto (Reels) y carruseles con alto valor técnico y retención';
 
     const prompt = `Actúa como el Director General de Estrategia Digital y Analítica de la prestigiosa agencia "Dávila Publicidad & Marketing" (Davila PM).
-Redacta un análisis ejecutivo exhaustivo, profundo, profesional y elegante para la marca "${brandInfo.name}" (Sector: ${brandInfo.industry}).
+Redacta un análisis ejecutivo o recomendaciones estratégicas para la marca "${brandInfo.name}" (Sector: ${brandInfo.industry}).
 
 ESTADÍSTICAS REALES AUDITADAS DEL PERIODO:
 - Canales Activos: ${brandInfo.networks.join(', ').toUpperCase()}
@@ -77,17 +83,14 @@ ESTADÍSTICAS REALES AUDITADAS DEL PERIODO:
 MEJORES PUBLICACIONES DEL CICLO:
 ${topPostsSummary}
 
-REGLAS DE REDACCIÓN DIRECTIVA:
-1. Redacta con tono de consultor de negocios y estratega de alta dirección. Cita datos numéricos concretos de la lista anterior.
-2. Divide el editorialAnalysis en 3 secciones en Markdown:
-   ### 1. Diagnóstico de Rendimiento & Tracción Audiovisual (Analiza el impacto del formato video/Reels, tasa de interacción y retención).
-   ### 2. Comportamiento de Comunidad & Ratio de Conversión Social (Analiza la calidad de los comentarios, volumen de guardados/compartidos y engagement).
-   ### 3. Balance Estratégico Davila PM & Optimización (Conclusiones de agencia para maximizar el ROI digital en el próximo ciclo).
-3. Genera 3 recomendaciones de negocio de alto impacto (accionables, específicas para el sector ${brandInfo.industry}, con metas cuantitativas claras).
+SOLICITUD ESPECÍFICA (TARGET: ${target.toUpperCase()}):
+${target === 'analysis' ? 'Genera ÚNICAMENTE el "editorialAnalysis" estructurado en 3 títulos ### (1. Diagnóstico de Rendimiento & Tracción Audiovisual, 2. Comportamiento de Comunidad & Ratio de Conversión Social, 3. Balance Estratégico Davila PM & Optimización).' : ''}
+${target === 'recommendations' ? 'Genera ÚNICAMENTE un array de 3 recomendaciones estratégicas de negocio de alto impacto (accionables, específicas para el sector ' + brandInfo.industry + ', con metas cuantitativas claras y categorías CONTENIDO, ESTRATEGIA, FORMATO, PAUTA u OPTIMIZACION).' : ''}
+${target === 'all' ? 'Genera tanto el "editorialAnalysis" como las 3 "recommendations".' : ''}
 
 Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta, sin texto extra fuera del JSON:
 {
-  "editorialAnalysis": "texto markdown con los 3 títulos ### y análisis profundo",
+  "editorialAnalysis": "texto markdown con los 3 títulos ### (1. Diagnóstico de Rendimiento & Tracción Audiovisual, 2. Comportamiento de Comunidad & Ratio de Conversión Social, 3. Balance Estratégico Davila PM & Optimización)",
   "recommendations": [
     {
       "title": "Título corto y contundente",
@@ -137,12 +140,10 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta, sin texto extra
             const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
             if (rawText) {
               const parsed = JSON.parse(rawText);
-              if (parsed.editorialAnalysis && Array.isArray(parsed.recommendations)) {
-                generatedAnalysis = parsed.editorialAnalysis;
-                generatedRecommendations = parsed.recommendations;
-                usedModel = `Google Gemini (${m})`;
-                break;
-              }
+              if (parsed.editorialAnalysis) generatedAnalysis = parsed.editorialAnalysis;
+              if (Array.isArray(parsed.recommendations)) generatedRecommendations = parsed.recommendations;
+              usedModel = `Google Gemini (${m})`;
+              break;
             }
           }
         } catch (err) {
@@ -151,8 +152,8 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta, sin texto extra
       }
     }
 
-    // High quality rich fallback if Gemini API is unreachable
-    if (!generatedAnalysis || generatedRecommendations.length === 0) {
+    // High quality rich fallback
+    if (!generatedAnalysis && target !== 'recommendations') {
       generatedAnalysis = `### 1. Diagnóstico de Rendimiento & Tracción Audiovisual
 Durante el ciclo evaluado, la presencia digital de **${brandInfo.name}** registró un volumen neto de **${totalImpressions.toLocaleString()} impresiones** y un alcance efectivo de **${totalReach.toLocaleString()} personas**, alcanzando un **Engagement Rate consolidado de ${avgEngagement}%**. La estrategia orientada a contenidos de alta retención demostró una tracción sustancial frente al promedio del sector (*${brandInfo.industry}*), consolidando picos de visibilidad en formatos audiovisuales dinámicos.
 
@@ -161,7 +162,9 @@ Se capitalizaron **${totalInteractions.toLocaleString()} interacciones netas**, 
 
 ### 3. Balance Estratégico Davila PM & Optimización
 El ecosistema de canales en **${brandInfo.networks.join(', ').toUpperCase()}** evidencia una sólida madurez de marca. Para el siguiente período operativo, recomendamos concentrar el 60% de la producción en narrativas técnicas de alto impacto y pauta inteligente enfocada en audiencias de toma de decisión para escalar la tasa de conversión en un +20%.`;
+    }
 
+    if (generatedRecommendations.length === 0 && target !== 'analysis') {
       generatedRecommendations = [
         {
           title: `Optimizar narrativa audiovisual y casos reales en ${brandInfo.name}`,
@@ -187,13 +190,21 @@ El ecosistema de canales en **${brandInfo.networks.join(', ').toUpperCase()}** e
     // Persist recommendations
     let refreshedRecs = generatedRecommendations.map((r, i) => ({ ...r, id: `rec-ai-${Date.now()}-${i + 1}`, clientId: id, status: 'PENDIENTE' }));
 
-    return NextResponse.json({
+    const responsePayload: any = {
       success: true,
-      editorialAnalysis: generatedAnalysis,
-      recommendations: refreshedRecs,
-      modelUsed: usedModel,
-      message: `¡Análisis y recomendaciones generados exitosamente con ${usedModel}!`
-    });
+      modelUsed: usedModel
+    };
+
+    if (target === 'analysis' || target === 'all') {
+      responsePayload.editorialAnalysis = generatedAnalysis;
+      responsePayload.message = `¡Análisis editorial generado con ${usedModel}!`;
+    }
+    if (target === 'recommendations' || target === 'all') {
+      responsePayload.recommendations = refreshedRecs;
+      responsePayload.message = `¡3 Recomendaciones estratégicas generadas con ${usedModel}!`;
+    }
+
+    return NextResponse.json(responsePayload);
   } catch (error: any) {
     console.error('AI Insights Generation Error:', error);
     return NextResponse.json({

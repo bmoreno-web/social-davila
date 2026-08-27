@@ -348,32 +348,77 @@ export default function ClienteDetallePage({
     }
   };
 
-  const handleGenerateAiInsights = async () => {
-    setIsGeneratingAi(true);
-    setAiSuccessMsg(null);
+  const [isGeneratingAnalysisAi, setIsGeneratingAnalysisAi] = useState(false);
+  const [isGeneratingRecsAi, setIsGeneratingRecsAi] = useState(false);
+  const [isGeneratingAllAi, setIsGeneratingAllAi] = useState(false);
+  const [analysisAiMsg, setAnalysisAiMsg] = useState<string | null>(null);
+  const [recsAiMsg, setRecsAiMsg] = useState<string | null>(null);
+  const [aiAllSuccessMsg, setAiAllSuccessMsg] = useState<string | null>(null);
+
+  const handleGenerateAiAll = async () => {
+    setIsGeneratingAllAi(true);
+    setAiAllSuccessMsg(null);
     try {
       const res = await fetch(`/api/clients/${clientId}/ai-insights`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target: 'all' })
       });
       const data = await res.json();
       if (data.success) {
-        if (data.editorialAnalysis) {
-          setAnalysisText(data.editorialAnalysis);
-        }
-        if (data.recommendations) {
-          setRecommendations(data.recommendations);
-        }
-        setAiSuccessMsg(data.message || '¡Análisis y recomendaciones generados exitosamente con IA!');
-        setTimeout(() => setAiSuccessMsg(null), 6000);
-      } else {
-        alert(data.error || 'Error al generar con IA');
+        if (data.editorialAnalysis) setAnalysisText(data.editorialAnalysis);
+        if (data.recommendations) setRecommendations(data.recommendations);
+        setAiAllSuccessMsg(data.message || '¡Análisis y recomendaciones generados exitosamente con IA!');
+        setTimeout(() => setAiAllSuccessMsg(null), 5000);
       }
     } catch (e) {
-      console.error('Error generating AI insights:', e);
-      alert('Error de conexión al generar con IA');
+      console.error('Error generating all AI insights:', e);
     } finally {
-      setIsGeneratingAi(false);
+      setIsGeneratingAllAi(false);
+    }
+  };
+
+  const handleGenerateAiAnalysisOnly = async () => {
+    setIsGeneratingAnalysisAi(true);
+    setAnalysisAiMsg(null);
+    try {
+      const res = await fetch(`/api/clients/${clientId}/ai-insights`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target: 'analysis' })
+      });
+      const data = await res.json();
+      if (data.success && data.editorialAnalysis) {
+        setAnalysisText(data.editorialAnalysis);
+        setAnalysisAiMsg(data.message || '¡Análisis editorial generado con IA!');
+        setTimeout(() => setAnalysisAiMsg(null), 5000);
+      }
+    } catch (e) {
+      console.error('Error generating AI analysis:', e);
+    } finally {
+      setIsGeneratingAnalysisAi(false);
+    }
+  };
+
+  const handleGenerateAiRecsOnly = async () => {
+    setIsGeneratingRecsAi(true);
+    setRecsAiMsg(null);
+    try {
+      const res = await fetch(`/api/clients/${clientId}/ai-insights`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target: 'recommendations' })
+      });
+      const data = await res.json();
+      if (data.success && data.recommendations) {
+        setRecommendations(data.recommendations);
+        setRecsAiMsg(data.message || '¡3 Recomendaciones generadas con IA!');
+        setTimeout(() => setRecsAiMsg(null), 5000);
+      }
+    } catch (e) {
+      console.error('Error generating AI recommendations:', e);
+    } finally {
+      setIsGeneratingRecsAi(false);
     }
   };
 
@@ -543,12 +588,12 @@ export default function ClienteDetallePage({
         <div className="flex items-center gap-3 flex-wrap">
           <Button
             size="sm"
-            onClick={handleGenerateAiInsights}
-            isLoading={isGeneratingAi}
+            onClick={handleGenerateAiAll}
+            isLoading={isGeneratingAllAi}
             className="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white text-xs gap-2 shadow-xl shadow-purple-600/30 border border-purple-400/40 py-2 transition-all font-bold group"
           >
-            <Sparkles className={`h-4 w-4 text-amber-300 group-hover:rotate-12 transition-transform ${isGeneratingAi ? 'animate-spin' : ''}`} />
-            <span>Generar Análisis & Recomendaciones IA</span>
+            <Sparkles className={`h-4 w-4 text-amber-300 group-hover:rotate-12 transition-transform ${isGeneratingAllAi ? 'animate-spin' : ''}`} />
+            <span>Generar Todo con IA (Análisis + Recs)</span>
           </Button>
 
           <Button
@@ -1011,12 +1056,12 @@ export default function ClienteDetallePage({
             <Button
               size="sm"
               variant="glass"
-              onClick={handleGenerateAiInsights}
-              isLoading={isGeneratingAi}
+              onClick={handleGenerateAiAnalysisOnly}
+              isLoading={isGeneratingAnalysisAi}
               className="text-xs border-purple-500/40 text-purple-200 hover:bg-purple-950/40 gap-1.5"
             >
               <Sparkles className="h-3.5 w-3.5 text-amber-300" />
-              <span>Autocompletar con Gemini IA</span>
+              <span>Redactar Análisis con IA</span>
             </Button>
 
             <Button
@@ -1030,6 +1075,13 @@ export default function ClienteDetallePage({
             </Button>
           </div>
         </div>
+
+        {analysisAiMsg && (
+          <div className="p-3 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-300 text-xs flex items-center gap-2 animate-fadeIn">
+            <Sparkles className="h-4 w-4 text-amber-400 shrink-0" />
+            <span>{analysisAiMsg}</span>
+          </div>
+        )}
 
         {analysisSavedStatus && (
           <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center gap-2">
@@ -1061,12 +1113,12 @@ export default function ClienteDetallePage({
             <Button
               size="sm"
               variant="glass"
-              onClick={handleGenerateAiInsights}
-              isLoading={isGeneratingAi}
+              onClick={handleGenerateAiRecsOnly}
+              isLoading={isGeneratingRecsAi}
               className="text-xs border-purple-500/40 text-purple-200 hover:bg-purple-950/40 gap-1.5"
             >
               <Sparkles className="h-3.5 w-3.5 text-amber-300" />
-              <span>Generar con IA</span>
+              <span>Sugerir 3 con IA</span>
             </Button>
 
             <Button
@@ -1078,6 +1130,13 @@ export default function ClienteDetallePage({
             </Button>
           </div>
         </div>
+
+        {recsAiMsg && (
+          <div className="p-3 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-300 text-xs flex items-center gap-2 animate-fadeIn">
+            <Sparkles className="h-4 w-4 text-amber-400 shrink-0" />
+            <span>{recsAiMsg}</span>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {recommendations.map((rec) => (

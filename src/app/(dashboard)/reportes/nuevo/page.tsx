@@ -37,31 +37,54 @@ export default function NuevoReportePage() {
   const [editorialAnalysis, setEditorialAnalysis] = useState('');
   const [reportStatus, setReportStatus] = useState('DRAFT');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
-  const [aiMessage, setAiMessage] = useState<string | null>(null);
+  const [isGeneratingAnalysisAi, setIsGeneratingAnalysisAi] = useState(false);
+  const [isGeneratingRecsAi, setIsGeneratingRecsAi] = useState(false);
+  const [analysisAiMsg, setAnalysisAiMsg] = useState<string | null>(null);
+  const [recsAiMsg, setRecsAiMsg] = useState<string | null>(null);
 
-  const handleGenerateAiReport = async () => {
+  const handleGenerateAiAnalysisOnly = async () => {
     if (!selectedClientId) return;
-    setIsGeneratingAi(true);
-    setAiMessage(null);
+    setIsGeneratingAnalysisAi(true);
+    setAnalysisAiMsg(null);
     try {
       const res = await fetch(`/api/clients/${selectedClientId}/ai-insights`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target: 'analysis' })
       });
       const data = await res.json();
-      if (data.success) {
-        if (data.editorialAnalysis) setEditorialAnalysis(data.editorialAnalysis);
-        if (data.recommendations && data.recommendations.length > 0) {
-          setRecommendationsList(data.recommendations);
-        }
-        setAiMessage(data.message || '¡Análisis y recomendaciones generados con Gemini IA!');
-        setTimeout(() => setAiMessage(null), 5000);
+      if (data.success && data.editorialAnalysis) {
+        setEditorialAnalysis(data.editorialAnalysis);
+        setAnalysisAiMsg(data.message || '¡Análisis editorial redactado con Gemini IA!');
+        setTimeout(() => setAnalysisAiMsg(null), 5000);
       }
     } catch (e) {
       console.error(e);
     } finally {
-      setIsGeneratingAi(false);
+      setIsGeneratingAnalysisAi(false);
+    }
+  };
+
+  const handleGenerateAiRecsOnly = async () => {
+    if (!selectedClientId) return;
+    setIsGeneratingRecsAi(true);
+    setRecsAiMsg(null);
+    try {
+      const res = await fetch(`/api/clients/${selectedClientId}/ai-insights`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target: 'recommendations' })
+      });
+      const data = await res.json();
+      if (data.success && data.recommendations && data.recommendations.length > 0) {
+        setRecommendationsList(data.recommendations);
+        setRecsAiMsg(data.message || '¡3 Recomendaciones generadas con Gemini IA!');
+        setTimeout(() => setRecsAiMsg(null), 5000);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsGeneratingRecsAi(false);
     }
   };
 
@@ -386,19 +409,19 @@ export default function NuevoReportePage() {
 
             <Button
               type="button"
-              onClick={handleGenerateAiReport}
-              isLoading={isGeneratingAi}
+              onClick={handleGenerateAiAnalysisOnly}
+              isLoading={isGeneratingAnalysisAi}
               className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs gap-1.5 shadow-md shadow-purple-600/20"
             >
               <Sparkles className="h-3.5 w-3.5 text-amber-300" />
-              <span>Autocompletar con Gemini IA</span>
+              <span>Redactar Análisis con IA</span>
             </Button>
           </div>
 
-          {aiMessage && (
+          {analysisAiMsg && (
             <div className="p-3 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-300 text-xs flex items-center gap-2 animate-fadeIn">
               <Sparkles className="h-4 w-4 text-amber-400 shrink-0" />
-              <span>{aiMessage}</span>
+              <span>{analysisAiMsg}</span>
             </div>
           )}
 
@@ -424,10 +447,29 @@ export default function NuevoReportePage() {
       {/* STEP 4: RECOMENDACIONES */}
       {step === 4 && (
         <div className="p-6 rounded-2xl bg-zinc-900/70 border border-zinc-800 space-y-5 animate-fadeIn">
-          <div>
-            <h2 className="text-base font-semibold text-white">4. Recomendaciones Estratégicas</h2>
-            <p className="text-xs text-zinc-400">Directrices accionables para el cliente con categoría y prioridad.</p>
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <h2 className="text-base font-semibold text-white">4. Recomendaciones Estratégicas</h2>
+              <p className="text-xs text-zinc-400">Directrices accionables para el cliente con categoría y prioridad.</p>
+            </div>
+
+            <Button
+              type="button"
+              onClick={handleGenerateAiRecsOnly}
+              isLoading={isGeneratingRecsAi}
+              className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs gap-1.5 shadow-md shadow-purple-600/20"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+              <span>Sugerir 3 con Gemini IA</span>
+            </Button>
           </div>
+
+          {recsAiMsg && (
+            <div className="p-3 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-300 text-xs flex items-center gap-2 animate-fadeIn">
+              <Sparkles className="h-4 w-4 text-amber-400 shrink-0" />
+              <span>{recsAiMsg}</span>
+            </div>
+          )}
 
           {/* List of current recs */}
           <div className="space-y-2.5">
