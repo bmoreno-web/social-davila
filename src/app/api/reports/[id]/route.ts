@@ -39,7 +39,6 @@ export async function GET(
     }
 
     if (!report) {
-      // Find by client if exists
       const firstClient = await prisma.client.findFirst({
         include: { socialConnections: true }
       });
@@ -111,10 +110,16 @@ export async function PUT(
         include: { client: true, metrics: true, recommendations: true }
       });
 
-      return NextResponse.json({ success: true, report: updated });
+      // Update in memory if present
+      const memIdx = IN_MEMORY_REPORTS.findIndex((r: any) => r.id === id);
+      if (memIdx !== -1) {
+        IN_MEMORY_REPORTS[memIdx] = { ...IN_MEMORY_REPORTS[memIdx], ...body };
+      }
+
+      return NextResponse.json({ success: true, report: updated, message: 'Reporte actualizado exitosamente' });
     } catch (e) {
       console.warn('Prisma update report fallback:', e);
-      return NextResponse.json({ success: true, report: { id, ...body } });
+      return NextResponse.json({ success: true, report: { id, ...body }, message: 'Reporte actualizado' });
     }
   } catch (error: any) {
     return NextResponse.json({ success: true });
@@ -128,16 +133,53 @@ export async function DELETE(
   try {
     const session = await getSession();
     if (!session || session.role === 'CLIENT') {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+      return NextResponse.json({ error: 'No tienes permisos para eliminar reportes' }, { status: 403 });
     }
 
     const { id } = await params;
+
+    // 1. Delete relations safely
     try {
-      await prisma.report.delete({ where: { id } });
+      await prisma.reportMetric.deleteMany({ where: { reportId: id } });
     } catch (e) {}
 
-    return NextResponse.json({ success: true });
+    try {
+      await prisma.recommendation.deleteMany({ where: { reportId: id } });
+    } catch (e) {}
+
+    try {
+      await prisma.reportPost.updateMany({ where: { reportId: id }, data: { reportId: null } });
+    } catch (e) {}
+
+    // 2. Delete the Report
+    try {
+      await prisma.report.delete({ where: { id } });
+    } catch (e) {
+      console.warn('Prisma delete report warning:', e);
+    }
+
+    // 3. Remove from in-memory cache
+    const memIdx = IN_MEMORY_REPORTS.findIndex((r: any) => r.id === id);
+    if (memIdx !== -1) {
+      IN_MEMORY_REPORTS.splice(memIdx, 1);
+    }
+
+    try {
+      await prisma.auditLog.create({
+        data: {
+          userName: session.name,
+          userEmail: session.email,
+          action: 'DELETE',
+          resourceType: 'REPORT',
+          resourceId: id,
+          details: `Eliminación de informe ID: ${id}`
+        }
+      });
+    } catch (e) {}
+
+    return NextResponse.json({ success: true, message: 'Reporte eliminado exitosamente' });
   } catch (error: any) {
-    return NextResponse.json({ success: true });
+    console.error('Delete report error:', error);
+    return NextResponse.json({ error: 'Error al eliminar reporte' }, { status: 500 });
   }
 }

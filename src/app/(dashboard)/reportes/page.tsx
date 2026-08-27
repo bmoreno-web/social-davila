@@ -13,7 +13,9 @@ import {
   Archive,
   ArrowRight,
   Sparkles,
-  Building2
+  Building2,
+  Trash2,
+  Edit3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -27,28 +29,53 @@ export default function ReportesGlobalPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
+      const [reportsRes, clientsRes] = await Promise.all([
+        fetch('/api/reports'),
+        fetch('/api/clients')
+      ]);
+      const reportsData = await reportsRes.json();
+      const clientsData = await clientsRes.json();
+
+      if (reportsData.reports) setReports(reportsData.reports);
+      if (clientsData.clients) setClients(clientsData.clients);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        const [reportsRes, clientsRes] = await Promise.all([
-          fetch('/api/reports'),
-          fetch('/api/clients')
-        ]);
-        const reportsData = await reportsRes.json();
-        const clientsData = await clientsRes.json();
-
-        if (reportsData.reports) setReports(reportsData.reports);
-        if (clientsData.clients) setClients(clientsData.clients);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchData();
   }, []);
+
+  const handleDeleteReport = async (reportId: string, title: string) => {
+    if (!confirm(`¿Estás seguro de que deseas eliminar el informe "${title}"?`)) {
+      return;
+    }
+
+    setDeletingId(reportId);
+    try {
+      const res = await fetch(`/api/reports/${reportId}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        setReports((prev) => prev.filter((r) => r.id !== reportId));
+      } else {
+        alert('No se pudo eliminar el reporte.');
+      }
+    } catch (e) {
+      console.error('Error deleting report:', e);
+      alert('Error de conexión al eliminar el reporte.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const filteredReports = reports.filter((r) => {
     const matchesClient = selectedClientId === 'ALL' || r.clientId === selectedClientId;
@@ -70,7 +97,7 @@ export default function ReportesGlobalPage() {
             Gestión de Reportes Editoriales
           </h1>
           <p className="text-xs text-zinc-400">
-            Crea, revisa, aprueba y publica informes mensuales de rendimiento para tus clientes.
+            Crea, revisa, edita, aprueba y publica informes mensuales de rendimiento para tus clientes.
           </p>
         </div>
 
@@ -82,7 +109,7 @@ export default function ReportesGlobalPage() {
           </Link>
 
           <Link href="/reportes/nuevo">
-            <Button className="bg-purple-600 hover:bg-purple-700 text-white text-xs gap-1.5">
+            <Button className="bg-purple-600 hover:bg-purple-700 text-white text-xs gap-1.5 shadow-md shadow-purple-600/20">
               <Plus className="h-4 w-4" /> Crear Reporte
             </Button>
           </Link>
@@ -103,31 +130,34 @@ export default function ReportesGlobalPage() {
             />
           </div>
 
-          <select
-            value={selectedClientId}
-            onChange={(e) => setSelectedClientId(e.target.value)}
-            className="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-200"
-          >
-            <option value="ALL">Todos los clientes</option>
-            {clients.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-zinc-500" />
+            <select
+              value={selectedClientId}
+              onChange={(e) => setSelectedClientId(e.target.value)}
+              className="bg-zinc-950/70 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-300 focus:outline-none focus:border-purple-500"
+            >
+              <option value="ALL">Todos los Clientes</option>
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
 
-          <select
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-            className="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-200"
-          >
-            <option value="ALL">Todos los estados</option>
-            <option value="DRAFT">Borrador (Draft)</option>
-            <option value="IN_REVIEW">En Revisión (In Review)</option>
-            <option value="APPROVED">Aprobado (Approved)</option>
-            <option value="PUBLISHED">Publicado (Published)</option>
-            <option value="ARCHIVED">Archivado (Archived)</option>
-          </select>
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="bg-zinc-950/70 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-300 focus:outline-none focus:border-purple-500"
+            >
+              <option value="ALL">Todos los Estados</option>
+              <option value="DRAFT">Borrador</option>
+              <option value="IN_REVIEW">En Revisión</option>
+              <option value="APPROVED">Aprobado</option>
+              <option value="PUBLISHED">Publicado</option>
+              <option value="ARCHIVED">Archivado</option>
+            </select>
+          </div>
         </div>
 
         <div className="text-xs text-zinc-400">
@@ -149,7 +179,7 @@ export default function ReportesGlobalPage() {
           <p className="text-xs text-zinc-500 mt-1">Genera tu primer informe mensual para un cliente.</p>
         </div>
       ) : (
-        <div className="rounded-2xl bg-zinc-900/70 border border-zinc-800/80 overflow-hidden">
+        <div className="rounded-2xl bg-zinc-900/70 border border-zinc-800/80 overflow-hidden shadow-xl">
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-zinc-800 bg-zinc-950/60 text-zinc-400 uppercase tracking-wider text-[10px]">
@@ -158,12 +188,12 @@ export default function ReportesGlobalPage() {
                 <th className="p-4 font-semibold">Período</th>
                 <th className="p-4 font-semibold">Estado</th>
                 <th className="p-4 font-semibold">Responsable</th>
-                <th className="p-4 font-semibold text-right">Acción</th>
+                <th className="p-4 font-semibold text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-800/60 text-zinc-300">
               {filteredReports.map((report) => (
-                <tr key={report.id} className="hover:bg-zinc-800/30 transition-colors">
+                <tr key={report.id} className="hover:bg-zinc-800/30 transition-colors group">
                   <td className="p-4 font-semibold text-white flex items-center gap-2.5">
                     <div className="h-7 w-7 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-[10px] overflow-hidden shrink-0">
                       {report.client?.logo ? (
@@ -196,11 +226,21 @@ export default function ReportesGlobalPage() {
                   </td>
                   <td className="p-4 text-zinc-400">{report.creator?.name || 'Equipo Davila'}</td>
                   <td className="p-4 text-right">
-                    <Link href={`/reportes/${report.id}`}>
-                      <Button variant="ghost" size="sm" className="h-7 text-xs text-purple-400 hover:text-purple-300">
-                        Abrir Reporte <ArrowRight className="h-3 w-3 ml-1" />
-                      </Button>
-                    </Link>
+                    <div className="flex items-center justify-end gap-2">
+                      <Link href={`/reportes/${report.id}`}>
+                        <Button variant="ghost" size="sm" className="h-7 text-xs text-purple-400 hover:text-purple-300 gap-1 px-2.5">
+                          <Edit3 className="h-3 w-3" /> Ver / Editar
+                        </Button>
+                      </Link>
+                      <button
+                        onClick={() => handleDeleteReport(report.id, report.title)}
+                        disabled={deletingId === report.id}
+                        title="Eliminar Reporte"
+                        className="p-1.5 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                      >
+                        <Trash2 className={`h-3.5 w-3.5 ${deletingId === report.id ? 'animate-spin' : ''}`} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
