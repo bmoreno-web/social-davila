@@ -311,6 +311,11 @@ html.light .glass-card {
    EXECUTIVE PDF & PRINT ENGINE (ALWAYS CLEAN LIGHT THEME, NO SIDEBAR/MENU)
    ========================================================================= */
 
+@page {
+  margin: 1.4cm 1.5cm;
+  size: A4 portrait;
+}
+
 @media print {
   /* 1. Hide all navigation, sidebars, headers, action buttons and decorations */
   aside,
@@ -346,7 +351,7 @@ html.light .glass-card {
     color-adjust: exact !important;
   }
 
-  /* 4. Force all dark cards to white background with clean borders */
+  /* 4. Force all dark cards to white background with clean borders & comfortable padding */
   [class*="bg-zinc-"],
   [class*="bg-\[\#"],
   .glass-panel,
@@ -398,11 +403,18 @@ html.light .glass-card {
     fill: #475569 !important;
   }
 
-  /* 8. Avoid page breaks inside cards */
-  .p-8,
-  .p-6,
+  /* 8. Generous Card & Section Spacing for Executive Reports */
+  .space-y-8 > * + * {
+    margin-top: 1.5rem !important;
+  }
+
+  .p-5, .p-6, .p-8 {
+    padding: 1.25rem 1.5rem !important;
+  }
+
   .rounded-3xl,
   .rounded-2xl {
+    border-radius: 0.75rem !important;
     page-break-inside: avoid;
     break-inside: avoid;
   }
