@@ -205,9 +205,17 @@ export default function NuevoReportePage() {
     setRecommendationsList(recommendationsList.filter((_, idx) => idx !== index));
   };
 
+  const [submitStatusMessage, setSubmitStatusMessage] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
   const handleSaveReport = async (publish = false) => {
-    if (!selectedClientId || !title) return;
+    if (!selectedClientId || !title) {
+      setSubmitError('Por favor selecciona un cliente y asigna un título al informe.');
+      return;
+    }
     setIsSubmitting(true);
+    setSubmitError(null);
+    setSubmitStatusMessage(publish ? 'Publicando informe para el cliente...' : 'Guardando borrador...');
 
     try {
       const res = await fetch('/api/reports', {
@@ -218,7 +226,7 @@ export default function NuevoReportePage() {
           title,
           periodStart,
           periodEnd,
-          status: publish ? 'PUBLISHED' : reportStatus,
+          status: publish ? 'PUBLISHED' : 'DRAFT',
           executiveSummary,
           editorialAnalysis,
           metrics: metricsList,
@@ -227,12 +235,18 @@ export default function NuevoReportePage() {
       });
 
       const data = await res.json();
-      if (res.ok) {
-        router.push(`/reportes/${data.report.id}`);
+      if (res.ok && data.report) {
+        setSubmitStatusMessage(publish ? '¡Informe publicado con éxito! Redirigiendo...' : '¡Borrador guardado! Redirigiendo...');
+        setTimeout(() => {
+          router.push(`/reportes/${data.report.id}`);
+        }, 500);
+      } else {
+        setSubmitError(data.error || 'Error al guardar el reporte');
+        setIsSubmitting(false);
       }
-    } catch (e) {
-      console.error(e);
-    } finally {
+    } catch (e: any) {
+      console.error('Error saving report:', e);
+      setSubmitError('Error de red o conexión al guardar el informe.');
       setIsSubmitting(false);
     }
   };
@@ -602,6 +616,21 @@ export default function NuevoReportePage() {
             </span>
             <div className="text-zinc-300 leading-relaxed whitespace-pre-line">{editorialAnalysis}</div>
           </div>
+
+          {/* Feedback Status / Error */}
+          {submitStatusMessage && (
+            <div className="p-3.5 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-300 text-xs flex items-center gap-2.5 animate-fadeIn">
+              <Sparkles className="h-4 w-4 text-amber-400 shrink-0 animate-spin" />
+              <span className="font-semibold">{submitStatusMessage}</span>
+            </div>
+          )}
+
+          {submitError && (
+            <div className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2.5 animate-fadeIn">
+              <span className="h-2 w-2 rounded-full bg-rose-400 shrink-0" />
+              <span>{submitError}</span>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex items-center justify-between pt-6 border-t border-zinc-800">
