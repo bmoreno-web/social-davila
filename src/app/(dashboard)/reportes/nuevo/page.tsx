@@ -37,6 +37,33 @@ export default function NuevoReportePage() {
   const [editorialAnalysis, setEditorialAnalysis] = useState('');
   const [reportStatus, setReportStatus] = useState('DRAFT');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+  const [aiMessage, setAiMessage] = useState<string | null>(null);
+
+  const handleGenerateAiReport = async () => {
+    if (!selectedClientId) return;
+    setIsGeneratingAi(true);
+    setAiMessage(null);
+    try {
+      const res = await fetch(`/api/clients/${selectedClientId}/ai-insights`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (data.editorialAnalysis) setEditorialAnalysis(data.editorialAnalysis);
+        if (data.recommendations && data.recommendations.length > 0) {
+          setRecommendationsList(data.recommendations);
+        }
+        setAiMessage(data.message || '¡Análisis y recomendaciones generados con Gemini IA!');
+        setTimeout(() => setAiMessage(null), 5000);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsGeneratingAi(false);
+    }
+  };
 
   // Auto-calculated Metrics Snapshot
   const [metricsList, setMetricsList] = useState<any[]>([
@@ -308,17 +335,36 @@ export default function NuevoReportePage() {
       {/* STEP 3: ANÁLISIS EDITORIAL DAVILA PM */}
       {step === 3 && (
         <div className="p-6 rounded-2xl bg-zinc-900/70 border border-purple-500/30 space-y-5 animate-fadeIn">
-          <div>
-            <h2 className="text-base font-semibold text-white flex items-center gap-2">
-              <Edit3 className="h-4 w-4 text-purple-400" /> 3. Redactar Análisis Davila PM
-            </h2>
-            <p className="text-xs text-zinc-400">
-              La sección editorial que diferencia a la agencia: añade contexto, análisis cualitativo y aprendizajes.
-            </p>
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <h2 className="text-base font-semibold text-white flex items-center gap-2">
+                <Edit3 className="h-4 w-4 text-purple-400" /> 3. Redactar Análisis Davila PM
+              </h2>
+              <p className="text-xs text-zinc-400">
+                La sección editorial que diferencia a la agencia: añade contexto, análisis cualitativo y aprendizajes.
+              </p>
+            </div>
+
+            <Button
+              type="button"
+              onClick={handleGenerateAiReport}
+              isLoading={isGeneratingAi}
+              className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs gap-1.5 shadow-md shadow-purple-600/20"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+              <span>Autocompletar con Gemini IA</span>
+            </Button>
           </div>
 
+          {aiMessage && (
+            <div className="p-3 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-300 text-xs flex items-center gap-2 animate-fadeIn">
+              <Sparkles className="h-4 w-4 text-amber-400 shrink-0" />
+              <span>{aiMessage}</span>
+            </div>
+          )}
+
           <Textarea
-            rows={8}
+            rows={10}
             value={editorialAnalysis}
             onChange={(e) => setEditorialAnalysis(e.target.value)}
             placeholder="Redacta el análisis cualitativo..."
