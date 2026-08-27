@@ -36,6 +36,15 @@ export default async function PortalLayout({
         </div>
 
         <div className="flex items-center gap-4 text-xs">
+          {session.role !== 'CLIENT' && (
+            <Link href="/">
+              <Button size="sm" variant="glass" className="text-xs border-zinc-700 text-zinc-300 gap-1.5 hidden md:flex">
+                <BarChart3 className="h-3.5 w-3.5 text-purple-400" />
+                <span>Panel Agencia</span>
+              </Button>
+            </Link>
+          )}
+
           <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300">
             <span className="h-2 w-2 rounded-full bg-emerald-400" />
             <span>{session.name}</span>
