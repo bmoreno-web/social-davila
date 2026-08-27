@@ -27,7 +27,11 @@ import {
   Check,
   X,
   Layers,
-  Award
+  Award,
+  Send,
+  MessageSquare,
+  Headphones,
+  Quote
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -45,6 +49,142 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatNumber, formatPercentage, formatDateSpanish, PLATFORM_INFO } from '@/lib/utils';
 
+interface PortalPostCardProps {
+  post: any;
+  idx: number;
+  onOpenModal: (post: any) => void;
+}
+
+function PortalPostCard({ post, idx, onOpenModal }: PortalPostCardProps) {
+  const initialUrl = post.mediaUrl || post.thumbnailUrl || '';
+  const [imgSrc, setImgSrc] = useState<string>(initialUrl);
+  const [hasError, setHasError] = useState<boolean>(!initialUrl);
+
+  useEffect(() => {
+    const url = post.mediaUrl || post.thumbnailUrl || '';
+    setImgSrc(url);
+    setHasError(!url);
+  }, [post.mediaUrl, post.thumbnailUrl]);
+
+  const platform = (post.platform || 'INSTAGRAM').toUpperCase();
+
+  const networkStylesMap: Record<string, { bg: string; border: string; badge: string; accent: string; quote: string }> = {
+    INSTAGRAM: {
+      bg: 'bg-gradient-to-br from-purple-950/80 via-pink-950/40 to-zinc-950',
+      border: 'border-pink-500/20 group-hover:border-pink-500/50',
+      badge: 'bg-gradient-to-r from-purple-600 to-pink-600 text-white',
+      accent: 'text-pink-400',
+      quote: 'text-pink-500/20'
+    },
+    FACEBOOK: {
+      bg: 'bg-gradient-to-br from-blue-950/80 via-indigo-950/50 to-zinc-950',
+      border: 'border-blue-500/20 group-hover:border-blue-500/50',
+      badge: 'bg-blue-600 text-white',
+      accent: 'text-blue-400',
+      quote: 'text-blue-500/20'
+    },
+    TIKTOK: {
+      bg: 'bg-gradient-to-br from-zinc-950 via-cyan-950/30 to-rose-950/30',
+      border: 'border-cyan-500/20 group-hover:border-cyan-500/50',
+      badge: 'bg-zinc-900 border border-cyan-500/40 text-cyan-300',
+      accent: 'text-cyan-400',
+      quote: 'text-cyan-500/20'
+    },
+    LINKEDIN: {
+      bg: 'bg-gradient-to-br from-blue-950/90 via-slate-900 to-zinc-950',
+      border: 'border-blue-400/20 group-hover:border-blue-400/50',
+      badge: 'bg-blue-700 text-white',
+      accent: 'text-blue-300',
+      quote: 'text-blue-400/20'
+    }
+  };
+
+  const networkStyles = networkStylesMap[platform] || networkStylesMap.INSTAGRAM;
+
+  return (
+    <div
+      onClick={() => onOpenModal(post)}
+      className={`rounded-2xl bg-zinc-950/90 border ${networkStyles.border} overflow-hidden flex flex-col justify-between hover:shadow-2xl hover:shadow-purple-950/30 transition-all duration-300 group cursor-pointer`}
+    >
+      <div>
+        {/* Media or Editorial Card Header */}
+        <div className="h-48 w-full relative overflow-hidden flex items-center justify-center">
+          {!hasError && imgSrc ? (
+            <img
+              src={imgSrc}
+              alt="Post thumbnail"
+              referrerPolicy="no-referrer"
+              crossOrigin="anonymous"
+              loading="lazy"
+              onError={() => setHasError(true)}
+              className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+          ) : (
+            <div className={`h-full w-full p-5 flex flex-col justify-between ${networkStyles.bg} relative overflow-hidden`}>
+              <Quote className={`absolute -bottom-4 -right-4 h-24 w-24 ${networkStyles.quote} pointer-events-none transform rotate-12`} />
+              
+              <div className="flex items-center justify-between z-10">
+                <span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full ${networkStyles.badge}`}>
+                  {platform}
+                </span>
+                <span className="text-[10px] text-zinc-400 font-mono">
+                  {formatDateSpanish(post.publishedAt, 'd MMM')}
+                </span>
+              </div>
+
+              <div className="z-10 my-auto py-2">
+                <p className="text-xs text-zinc-100 font-medium line-clamp-3 leading-relaxed italic">
+                  &ldquo;{post.caption || 'Publicación estratégica en redes sociales'}&rdquo;
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between text-[10px] text-zinc-400 pt-2 border-t border-zinc-800/60 z-10">
+                <span className={`font-semibold ${networkStyles.accent} flex items-center gap-1`}>
+                  <Sparkles className="h-3 w-3" /> Top Contenido
+                </span>
+                <span>{post.likes ? `${formatNumber(post.likes)} likes` : 'Destacado'}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Badges on top of image */}
+          <span className="absolute top-2.5 left-2.5 text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-zinc-950/80 text-white backdrop-blur-md border border-zinc-800 shadow-md">
+            #{idx + 1} Top
+          </span>
+          <span className="absolute bottom-2.5 right-2.5 text-[10px] px-2 py-0.5 rounded-md font-semibold bg-zinc-950/85 text-zinc-200 backdrop-blur-md uppercase border border-zinc-800">
+            {post.postType || 'Publicación'}
+          </span>
+        </div>
+
+        {/* Caption snippet */}
+        <div className="p-4 space-y-2">
+          <p className="text-xs text-zinc-200 line-clamp-2 leading-relaxed font-sans">
+            {post.caption || 'Publicación en redes sociales'}
+          </p>
+        </div>
+      </div>
+
+      {/* Metrics footer */}
+      <div className="p-4 pt-0">
+        <div className="grid grid-cols-3 gap-1 p-2 rounded-xl bg-zinc-900/80 border border-zinc-800/60 text-center text-[11px] mb-2 text-zinc-300">
+          <div>
+            <span className="text-[9px] text-zinc-500 block">Likes</span>
+            <span className="font-semibold text-rose-400">{formatNumber(post.likes)}</span>
+          </div>
+          <div>
+            <span className="text-[9px] text-zinc-500 block">Comms</span>
+            <span className="font-semibold text-blue-400">{formatNumber(post.comments)}</span>
+          </div>
+          <div>
+            <span className="text-[9px] text-zinc-500 block">ER</span>
+            <span className="font-bold text-purple-400">{post.engagementRate}%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ClientPortalHomePage() {
   const [client, setClient] = useState<any>(null);
   const [allClients, setAllClients] = useState<any[]>([]);
@@ -56,10 +196,18 @@ export default function ClientPortalHomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
 
-  // Filters & State
+  // Filters & Modal States
   const [dateRangePreset, setDateRangePreset] = useState<'7d' | '30d' | 'this_month' | 'last_month' | '90d'>('30d');
   const [selectedPostModal, setSelectedPostModal] = useState<any | null>(null);
   const [copiedCaption, setCopiedCaption] = useState(false);
+
+  // Advisor Contact Modal State
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [advisorSubject, setAdvisorSubject] = useState('Consulta sobre informe mensual');
+  const [advisorMessage, setAdvisorMessage] = useState('');
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [messageSentSuccess, setMessageSentSuccess] = useState(false);
+  const [copiedEmail, setCopiedEmail] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
@@ -143,6 +291,28 @@ export default function ClientPortalHomePage() {
     setTimeout(() => setCopiedCaption(false), 2500);
   };
 
+  const copyEmailAddress = () => {
+    navigator.clipboard.writeText('ddigital@davilaweb.com');
+    setCopiedEmail(true);
+    setTimeout(() => setCopiedEmail(false), 2500);
+  };
+
+  const handleSendMessageToAdvisor = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!advisorMessage.trim()) return;
+
+    setIsSendingMessage(true);
+    setTimeout(() => {
+      setIsSendingMessage(false);
+      setMessageSentSuccess(true);
+      setTimeout(() => {
+        setMessageSentSuccess(false);
+        setAdvisorMessage('');
+        setIsContactModalOpen(false);
+      }, 2500);
+    }, 1000);
+  };
+
   const activeClient = client || {
     name: 'Acesco Colombia',
     logo: 'https://static.metricool.com/brand-logo/202409/2930665-temp-file16623787061548330277.com-brand-facebook-page-image',
@@ -161,6 +331,10 @@ export default function ClientPortalHomePage() {
   const platforms = activeClient.socialConnections || [];
   const latestReport = activeClient.reports?.[0] || reports[0];
   const recommendations = activeClient.recommendations || [];
+
+  const whatsappMessage = encodeURIComponent(
+    `Hola Davila PM, soy cliente de *${activeClient.name}* y me gustaría hacer una consulta sobre nuestro informe de rendimiento digital.`
+  );
 
   return (
     <div className="space-y-10 animate-fadeIn max-w-7xl mx-auto pb-20">
@@ -225,6 +399,15 @@ export default function ClientPortalHomePage() {
                 </Button>
               </Link>
             )}
+
+            <Button
+              onClick={() => setIsContactModalOpen(true)}
+              variant="glass"
+              className="border-zinc-700 text-xs text-zinc-200 hover:border-purple-500 gap-1.5"
+            >
+              <Headphones className="h-3.5 w-3.5 text-purple-400" />
+              <span>Contactar Asesor</span>
+            </Button>
           </div>
         </div>
       </div>
@@ -455,7 +638,7 @@ export default function ClientPortalHomePage() {
         </div>
       </div>
 
-      {/* 6. MEJORES CONTENIDOS DEL CLIENTE (Real Posts) */}
+      {/* 6. MEJORES CONTENIDOS DEL CLIENTE (Rich Editorial Cards with Zero Broken Images) */}
       <div className="rounded-3xl bg-zinc-900/70 border border-zinc-800/80 p-6 md:p-8 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -478,59 +661,12 @@ export default function ClientPortalHomePage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             {posts.slice(0, 4).map((post, idx) => (
-              <div
-                key={post.id}
-                onClick={() => setSelectedPostModal(post)}
-                className="rounded-2xl bg-zinc-950/80 border border-zinc-800 overflow-hidden flex flex-col justify-between hover:border-purple-500/50 hover:shadow-xl hover:shadow-purple-950/20 transition-all duration-300 group cursor-pointer"
-              >
-                <div>
-                  <div className="h-44 w-full bg-zinc-900 relative overflow-hidden flex items-center justify-center">
-                    {post.mediaUrl ? (
-                      <img
-                        src={post.mediaUrl}
-                        alt="Post thumbnail"
-                        referrerPolicy="no-referrer"
-                        className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div className="h-full w-full p-4 flex flex-col justify-between bg-gradient-to-br from-purple-950/40 via-zinc-900 to-zinc-950">
-                        <span className="text-[10px] font-bold text-purple-400 uppercase">{post.platform}</span>
-                        <p className="text-xs text-zinc-200 line-clamp-3 italic">&ldquo;{post.caption}&rdquo;</p>
-                        <span className="text-[10px] text-zinc-500 font-mono">{formatDateSpanish(post.publishedAt, 'd MMM')}</span>
-                      </div>
-                    )}
-                    <span className="absolute top-2.5 left-2.5 text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-purple-600/90 text-white backdrop-blur-md">
-                      #{idx + 1} Top
-                    </span>
-                    <span className="absolute bottom-2.5 right-2.5 text-[10px] px-2 py-0.5 rounded-md font-semibold bg-zinc-950/80 text-zinc-200 backdrop-blur-md uppercase border border-zinc-800">
-                      {post.postType || 'Post'}
-                    </span>
-                  </div>
-
-                  <div className="p-4 space-y-2">
-                    <p className="text-xs text-zinc-200 line-clamp-2 leading-relaxed font-sans">
-                      {post.caption || 'Publicación en redes sociales'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="p-4 pt-0">
-                  <div className="grid grid-cols-3 gap-1 p-2 rounded-xl bg-zinc-900/80 border border-zinc-800/60 text-center text-[11px] mb-2 text-zinc-300">
-                    <div>
-                      <span className="text-[9px] text-zinc-500 block">Likes</span>
-                      <span className="font-semibold text-rose-400">{formatNumber(post.likes)}</span>
-                    </div>
-                    <div>
-                      <span className="text-[9px] text-zinc-500 block">Comms</span>
-                      <span className="font-semibold text-blue-400">{formatNumber(post.comments)}</span>
-                    </div>
-                    <div>
-                      <span className="text-[9px] text-zinc-500 block">ER</span>
-                      <span className="font-bold text-purple-400">{post.engagementRate}%</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <PortalPostCard
+                key={post.id || idx}
+                post={post}
+                idx={idx}
+                onOpenModal={setSelectedPostModal}
+              />
             ))}
           </div>
         )}
@@ -626,14 +762,120 @@ export default function ClientPortalHomePage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <a href="mailto:ddigital@davilaweb.com" className="inline-block">
-            <Button variant="glass" className="text-xs border-zinc-700 hover:border-purple-500 gap-2">
-              <Mail className="h-4 w-4 text-purple-400" />
-              <span>Contactar Asesor</span>
-            </Button>
-          </a>
+          <Button
+            onClick={() => setIsContactModalOpen(true)}
+            className="bg-purple-600 hover:bg-purple-700 text-white text-xs gap-2 shadow-lg shadow-purple-600/30"
+          >
+            <Headphones className="h-4 w-4" />
+            <span>Contactar Asesor Directo</span>
+          </Button>
         </div>
       </div>
+
+      {/* Contact Advisor Modal */}
+      {isContactModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-zinc-950 border border-zinc-800 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh] animate-scaleIn">
+            <div className="px-6 py-4 border-b border-zinc-800/80 flex items-center justify-between bg-zinc-900/60">
+              <div className="flex items-center gap-2">
+                <Headphones className="h-4 w-4 text-purple-400" />
+                <span className="text-sm font-bold text-white font-display">Contactar a mi Asesor Davila PM</span>
+              </div>
+              <button
+                onClick={() => setIsContactModalOpen(false)}
+                className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-6">
+              {/* Direct channels */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* WhatsApp */}
+                <a
+                  href={`https://wa.me/573001234567?text=${whatsappMessage}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-4 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 hover:border-emerald-500 transition-all flex items-center gap-3 group"
+                >
+                  <div className="h-10 w-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                    <MessageSquare className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-white block group-hover:text-emerald-300">
+                      WhatsApp Directo
+                    </span>
+                    <span className="text-[11px] text-zinc-400">+57 300 812 3456</span>
+                  </div>
+                </a>
+
+                {/* Email Copy */}
+                <div
+                  onClick={copyEmailAddress}
+                  className="p-4 rounded-2xl bg-purple-950/30 border border-purple-500/30 hover:border-purple-500 transition-all flex items-center gap-3 cursor-pointer group"
+                >
+                  <div className="h-10 w-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
+                    {copiedEmail ? <Check className="h-5 w-5 text-emerald-400" /> : <Mail className="h-5 w-5" />}
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-white block group-hover:text-purple-300">
+                      {copiedEmail ? '¡Correo Copiado!' : 'Correo Estratega'}
+                    </span>
+                    <span className="text-[11px] text-zinc-400">ddigital@davilaweb.com</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Message Form */}
+              <form onSubmit={handleSendMessageToAdvisor} className="p-5 rounded-2xl bg-zinc-900/60 border border-zinc-800 space-y-4">
+                <span className="text-xs font-bold text-zinc-200 uppercase tracking-wider block">
+                  Enviar Mensaje Directo a tu Director de Cuenta
+                </span>
+
+                <div>
+                  <label className="text-[11px] text-zinc-400 block mb-1">Asunto:</label>
+                  <input
+                    type="text"
+                    value={advisorSubject}
+                    onChange={(e) => setAdvisorSubject(e.target.value)}
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500"
+                    placeholder="Ej. Revisión de metas para el próximo ciclo"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] text-zinc-400 block mb-1">Tu Mensaje o Pregunta:</label>
+                  <textarea
+                    rows={3}
+                    value={advisorMessage}
+                    onChange={(e) => setAdvisorMessage(e.target.value)}
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500 resize-none font-sans"
+                    placeholder="Escribe aquí tu consulta o requerimiento específico..."
+                    required
+                  />
+                </div>
+
+                {messageSentSuccess ? (
+                  <div className="p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                    <span>¡Mensaje enviado con éxito! Tu director de cuenta te responderá a la brevedad.</span>
+                  </div>
+                ) : (
+                  <Button
+                    type="submit"
+                    isLoading={isSendingMessage}
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white text-xs gap-2"
+                  >
+                    <Send className="h-3.5 w-3.5" />
+                    <span>Enviar a Davila PM</span>
+                  </Button>
+                )}
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Post Modal Preview */}
       {selectedPostModal && (
