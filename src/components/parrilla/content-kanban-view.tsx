@@ -14,7 +14,8 @@ import {
   MessageSquare,
   Sparkles,
   ArrowRight,
-  Plus
+  Plus,
+  Play
 } from 'lucide-react';
 import { ContentPost, ContentPostStatus, STATUS_CONFIG } from './types';
 import { Badge } from '@/components/ui/badge';
@@ -139,7 +140,7 @@ export function ContentKanbanView({
                     >
                       {/* Media preview banner if present */}
                       {post.mediaUrls && (
-                        <div className="relative aspect-video rounded-lg overflow-hidden border border-zinc-800 bg-zinc-950">
+                        <div className="relative aspect-video rounded-lg overflow-hidden border border-zinc-800 bg-zinc-950 flex items-center justify-center">
                           <img
                             src={normalizeMediaUrl(post.mediaUrls)}
                             alt="Preview"
@@ -148,6 +149,11 @@ export function ContentKanbanView({
                               (e.target as HTMLElement).style.display = 'none';
                             }}
                           />
+                          {(post.contentType === 'REEL' || post.contentType === 'VIDEO' || post.contentType === 'TIKTOK') && (
+                            <div className="absolute h-8 w-8 rounded-full bg-black/60 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white shadow-md">
+                              <Play className="h-3.5 w-3.5 fill-white ml-0.5" />
+                            </div>
+                          )}
                         </div>
                       )}
 

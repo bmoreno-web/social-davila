@@ -28,6 +28,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { ContentPost, STATUS_CONFIG } from '@/components/parrilla/types';
 import { normalizeMediaUrl } from '@/lib/utils';
+import { MediaPlayer } from '@/components/parrilla/media-player';
 
 const FORMAT_ICONS: Record<string, any> = {
   REEL: Film,
@@ -334,54 +335,16 @@ export default function ClientPortalParrillaPage() {
                   </Badge>
                 </div>
 
-                {/* Media Preview if available */}
+                {/* Media Player / Preview if available */}
                 {post.mediaUrls && (
-                  (() => {
-                    const norm = normalizeMediaUrl(post.mediaUrls);
-                    const isCanvaFigma = post.mediaUrls.includes('canva.com') || post.mediaUrls.includes('figma.com');
-
-                    if (isCanvaFigma) {
-                      return (
-                        <div className="aspect-video bg-gradient-to-br from-purple-950/40 to-zinc-950 border-b border-zinc-800 p-6 flex flex-col items-center justify-center text-center gap-2">
-                          <FileText className="h-10 w-10 text-purple-400" />
-                          <div>
-                            <p className="text-sm font-bold text-white">Diseño Interactivo en {post.mediaUrls.includes('canva') ? 'Canva' : 'Figma'}</p>
-                            <p className="text-xs text-zinc-400">Arte editable preparado para revisión</p>
-                          </div>
-                          <a
-                            href={post.mediaUrls}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-4 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-md shadow-purple-600/20 mt-1"
-                          >
-                            <span>Abrir Arte en {post.mediaUrls.includes('canva') ? 'Canva' : 'Figma'}</span>
-                            <ExternalLink className="h-3.5 w-3.5" />
-                          </a>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div
-                        onClick={() => setActiveZoomUrl(norm)}
-                        className="relative aspect-video bg-zinc-950 border-b border-zinc-800 overflow-hidden flex items-center justify-center cursor-pointer group"
-                        title="Clic para ampliar arte en pantalla completa"
-                      >
-                        <img
-                          src={norm}
-                          alt={post.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          onError={(e) => {
-                            (e.target as HTMLElement).style.display = 'none';
-                          }}
-                        />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-xs text-white font-semibold">
-                          <Maximize2 className="h-4 w-4" />
-                          <span>Ver Arte en Pantalla Completa</span>
-                        </div>
-                      </div>
-                    );
-                  })()
+                  <div className="border-b border-zinc-800 p-2 bg-zinc-950/60">
+                    <MediaPlayer
+                      mediaUrl={post.mediaUrls}
+                      contentType={post.contentType}
+                      title={post.title}
+                      onZoomImage={(url) => setActiveZoomUrl(url)}
+                    />
+                  </div>
                 )}
 
                 {/* Body Content */}

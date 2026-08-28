@@ -30,6 +30,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ContentPost, ContentPostStatus, ContentType, STATUS_CONFIG } from './types';
 import { normalizeMediaUrl } from '@/lib/utils';
+import { MediaPlayer } from './media-player';
 
 interface ContentModalProps {
   isOpen: boolean;
@@ -554,56 +555,19 @@ export function ContentModal({
                 <div className="flex items-center justify-between text-xs text-zinc-400">
                   <span className="font-semibold flex items-center gap-1.5">
                     <Sparkles className="h-3.5 w-3.5 text-purple-400" />
-                    Previsualización Arte
+                    Previsualización Multimedia
                   </span>
                   <span className="text-[10px] uppercase font-bold text-zinc-500">
                     {contentType}
                   </span>
                 </div>
 
-                {normalizedUrl && !isCanvaOrFigma ? (
-                  <div
-                    onClick={() => setIsZoomOpen(true)}
-                    className="relative aspect-video rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900 flex items-center justify-center cursor-pointer group"
-                    title="Clic para ampliar en pantalla completa"
-                  >
-                    <img
-                      src={normalizedUrl}
-                      alt="Arte Preview"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = 'none';
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-xs text-white font-semibold">
-                      <Maximize2 className="h-4 w-4" />
-                      <span>Ampliar</span>
-                    </div>
-                  </div>
-                ) : isCanvaOrFigma ? (
-                  <div className="aspect-video rounded-lg border border-purple-500/30 bg-purple-950/20 flex flex-col items-center justify-center text-center p-4 gap-2">
-                    <FileText className="h-8 w-8 text-purple-400" />
-                    <div>
-                      <p className="text-xs font-bold text-white">Diseño en {mediaUrls.includes('canva') ? 'Canva' : 'Figma'}</p>
-                      <p className="text-[10px] text-zinc-400">Enlace interactivo configurado</p>
-                    </div>
-                    <a
-                      href={mediaUrls}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-3 py-1 rounded bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold flex items-center gap-1 mt-1"
-                    >
-                      <span>Abrir Archivo</span>
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                  </div>
-                ) : (
-                  <div className="aspect-video rounded-lg border border-dashed border-zinc-800 bg-zinc-900/40 flex flex-col items-center justify-center text-zinc-500 p-4 text-center">
-                    <ImageIcon className="h-8 w-8 text-zinc-600 mb-1" />
-                    <p className="text-xs">Sin imagen o video adjunto</p>
-                    <p className="text-[10px] text-zinc-600">Sube un archivo o pega un enlace</p>
-                  </div>
-                )}
+                <MediaPlayer
+                  mediaUrl={mediaUrls}
+                  contentType={contentType}
+                  title={title}
+                  onZoomImage={(url) => setIsZoomOpen(true)}
+                />
               </div>
 
               {/* Client Feedback Banner if present */}

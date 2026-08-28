@@ -72,7 +72,7 @@ export function normalizeMediaUrl(url: string | null | undefined): string {
   const trimmed = url.trim();
 
   // If already base64 data url
-  if (trimmed.startsWith('data:image/')) return trimmed;
+  if (trimmed.startsWith('data:image/') || trimmed.startsWith('data:video/')) return trimmed;
 
   // Google Drive Link Converter (e.g. drive.google.com/file/d/ID/view or open?id=ID)
   const driveFileMatch = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
@@ -93,4 +93,56 @@ export function normalizeMediaUrl(url: string | null | undefined): string {
 
   return trimmed;
 }
+
+export function getDriveVideoEmbedUrl(url: string | null | undefined): string | null {
+  if (!url || typeof url !== 'string') return null;
+  const trimmed = url.trim();
+  const driveFileMatch = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (driveFileMatch && driveFileMatch[1]) {
+    return `https://drive.google.com/file/d/${driveFileMatch[1]}/preview`;
+  }
+  const driveIdMatch = trimmed.match(/id=([a-zA-Z0-9_-]+)/);
+  if (trimmed.includes('drive.google.com') && driveIdMatch && driveIdMatch[1]) {
+    return `https://drive.google.com/file/d/${driveIdMatch[1]}/preview`;
+  }
+  return null;
+}
+
+export function getYoutubeEmbedUrl(url: string | null | undefined): string | null {
+  if (!url || typeof url !== 'string') return null;
+  const trimmed = url.trim();
+  const ytMatch = trimmed.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/);
+  if (ytMatch && ytMatch[1]) {
+    return `https://www.youtube-nocookie.com/embed/${ytMatch[1]}`;
+  }
+  return null;
+}
+
+export function detectMediaType(url: string | null | undefined, contentType?: string): 'IMAGE' | 'VIDEO_DIRECT' | 'DRIVE_VIDEO' | 'YOUTUBE' | 'CANVA_FIGMA' {
+  if (!url) return 'IMAGE';
+  const trimmed = url.trim().toLowerCase();
+
+  if (trimmed.includes('canva.com') || trimmed.includes('figma.com')) {
+    return 'CANVA_FIGMA';
+  }
+
+  if (trimmed.includes('youtube.com') || trimmed.includes('youtu.be')) {
+    return 'YOUTUBE';
+  }
+
+  if (trimmed.includes('drive.google.com') && (contentType === 'REEL' || contentType === 'VIDEO' || contentType === 'TIKTOK' || trimmed.includes('video'))) {
+    return 'DRIVE_VIDEO';
+  }
+
+  if (trimmed.endsWith('.mp4') || trimmed.endsWith('.webm') || trimmed.endsWith('.mov') || trimmed.startsWith('data:video/')) {
+    return 'VIDEO_DIRECT';
+  }
+
+  if (contentType === 'REEL' || contentType === 'VIDEO' || contentType === 'TIKTOK') {
+    if (trimmed.includes('drive.google.com')) return 'DRIVE_VIDEO';
+  }
+
+  return 'IMAGE';
+}
+
 
