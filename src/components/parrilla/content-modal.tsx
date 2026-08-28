@@ -211,6 +211,17 @@ export function ContentModal({
         }
       };
       reader.readAsDataURL(file);
+    } else if (file.type.startsWith('video/')) {
+      // Direct video file preview
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        if (result) {
+          setMediaUrls(result);
+        }
+        setUploadingDrive(false);
+      };
+      reader.readAsDataURL(file);
     } else {
       setUploadingDrive(false);
     }
@@ -495,7 +506,9 @@ export function ContentModal({
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
-                    Arte / Creativo de la Publicación
+                    {contentType === 'REEL' || contentType === 'VIDEO' || contentType === 'TIKTOK'
+                      ? 'Video o Reel de la Publicación'
+                      : 'Arte / Creativo de la Publicación'}
                   </label>
                   <div className="flex items-center gap-1 p-0.5 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px]">
                     <button
@@ -508,7 +521,11 @@ export function ContentModal({
                       }`}
                     >
                       <Upload className="h-2.5 w-2.5" />
-                      <span>Subir Imagen</span>
+                      <span>
+                        {contentType === 'REEL' || contentType === 'VIDEO' || contentType === 'TIKTOK'
+                          ? 'Subir Video (MP4)'
+                          : 'Subir Archivo'}
+                      </span>
                     </button>
                     <button
                       type="button"
@@ -528,33 +545,41 @@ export function ContentModal({
                 {mediaMode === 'UPLOAD' ? (
                   <div
                     onClick={() => !uploadingDrive && fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-zinc-700 hover:border-purple-500 bg-zinc-900/50 hover:bg-zinc-900/80 rounded-xl p-4 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-1.5 group"
+                    className="border-2 border-dashed border-zinc-700 hover:border-purple-500 bg-zinc-900/50 hover:bg-zinc-900/80 rounded-xl p-4 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2 group"
                   >
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept="image/*,video/mp4,video/quicktime,video/webm"
+                      accept="video/mp4,video/quicktime,video/webm,video/mkv,video/*,image/jpeg,image/png,image/webp,image/*"
                       onChange={handleFileUpload}
                       disabled={uploadingDrive}
                       className="hidden"
                     />
-                    <div className="h-10 w-10 rounded-full bg-purple-600/20 text-purple-400 group-hover:scale-110 transition-transform flex items-center justify-center">
+                    <div className="h-11 w-11 rounded-full bg-purple-600/20 text-purple-400 group-hover:scale-110 transition-transform flex items-center justify-center">
                       {uploadingDrive ? (
                         <div className="h-5 w-5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+                      ) : contentType === 'REEL' || contentType === 'VIDEO' || contentType === 'TIKTOK' ? (
+                        <Video className="h-5 w-5" />
                       ) : (
                         <Upload className="h-5 w-5" />
                       )}
                     </div>
-                    <p className="text-xs font-semibold text-zinc-200">
-                      {uploadingDrive
-                        ? 'Subiendo archivo a Google Drive de Davila PM...'
-                        : mediaUrls
-                        ? 'Cambiar archivo multimedia'
-                        : 'Haz clic para subir arte o video'}
-                    </p>
-                    <p className="text-[10px] text-zinc-500">
-                      Formatos: JPG, PNG, WEBP, MP4 (se sube y vincula a Drive)
-                    </p>
+                    <div>
+                      <p className="text-xs font-bold text-zinc-100">
+                        {uploadingDrive
+                          ? 'Procesando archivo...'
+                          : mediaUrls
+                          ? 'Cambiar video o archivo'
+                          : contentType === 'REEL' || contentType === 'VIDEO' || contentType === 'TIKTOK'
+                          ? 'Haz clic para seleccionar Video (MP4, MOV, WEBM)'
+                          : 'Haz clic para seleccionar Imagen o Arte'}
+                      </p>
+                      <p className="text-[10px] text-zinc-400 mt-0.5">
+                        {contentType === 'REEL' || contentType === 'VIDEO' || contentType === 'TIKTOK'
+                          ? 'Formatos de video soportados: MP4, MOV, WEBM (se reproduce en directo)'
+                          : 'Formatos soportados: JPG, PNG, WEBP, GIF'}
+                      </p>
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-1">
@@ -562,11 +587,17 @@ export function ContentModal({
                       type="text"
                       value={mediaUrls}
                       onChange={(e) => setMediaUrls(e.target.value)}
-                      placeholder="Pega enlace de Google Drive, Dropbox, Canva, Figma o URL de imagen..."
+                      placeholder={
+                        contentType === 'REEL' || contentType === 'VIDEO' || contentType === 'TIKTOK'
+                          ? 'Pega enlace de Google Drive del video, YouTube o enlace .mp4...'
+                          : 'Pega enlace de Google Drive, Dropbox, Canva, Figma o URL de imagen...'
+                      }
                       className="w-full bg-zinc-900 border border-zinc-700/80 rounded-xl px-3.5 py-2 text-xs text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-purple-500"
                     />
                     <p className="text-[10px] text-zinc-500 italic pl-1">
-                      💡 Enlaces de Google Drive y Dropbox se transforman automáticamente a vista previa en directo.
+                      💡 {contentType === 'REEL' || contentType === 'VIDEO' || contentType === 'TIKTOK'
+                        ? 'Pega el enlace de Google Drive del Reel/Video y se convertirá en un reproductor interactivo.'
+                        : 'Enlaces de Google Drive y Dropbox se transforman automáticamente a vista previa en directo.'}
                     </p>
                   </div>
                 )}
