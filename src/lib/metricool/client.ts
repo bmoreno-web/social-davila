@@ -293,8 +293,28 @@ export class MetricoolService {
       ? validNetworks.map((network) => ({ network }))
       : [{ network: 'instagram' }, { network: 'facebook' }];
 
-    // Filter external http media
-    const validMedia = mediaUrls?.filter((url) => url && typeof url === 'string' && url.startsWith('http')) || [];
+    // Filter and normalize external http media (Google Drive direct download, Dropbox raw, etc.)
+    const validMedia = (mediaUrls || [])
+      .filter((url) => url && typeof url === 'string' && url.startsWith('http'))
+      .map((url) => {
+        const trimmed = url.trim();
+        // Google Drive conversion for Metricool file fetcher
+        const driveFileMatch = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+        if (driveFileMatch && driveFileMatch[1]) {
+          return `https://drive.google.com/uc?export=download&id=${driveFileMatch[1]}`;
+        }
+        const driveIdMatch = trimmed.match(/id=([a-zA-Z0-9_-]+)/);
+        if (trimmed.includes('drive.google.com') && driveIdMatch && driveIdMatch[1]) {
+          return `https://drive.google.com/uc?export=download&id=${driveIdMatch[1]}`;
+        }
+        // Dropbox raw link conversion
+        if (trimmed.includes('dropbox.com') && !trimmed.includes('raw=1')) {
+          return trimmed.replace('dl=0', 'raw=1');
+        }
+        return trimmed;
+      });
+
+    const isVideo = validMedia.some((m) => m.toLowerCase().includes('.mp4') || m.toLowerCase().includes('.mov') || m.toLowerCase().includes('video'));
 
     const payload: any = {
       blogId: Number(blogId),
@@ -311,7 +331,15 @@ export class MetricoolService {
 
     if (validMedia.length > 0) {
       payload.media = validMedia;
-      payload.saveExternalMediaFiles = true;
+      payload.saveExternalMediaFiles = false;
+    }
+
+    if (isVideo || validNetworks.includes('instagram')) {
+      payload.instagramData = {
+        type: 'REEL',
+        showReelOnFeed: true,
+        autoPublish: !isDraft
+      };
     }
 
     try {
