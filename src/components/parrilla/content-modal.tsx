@@ -209,9 +209,16 @@ export function ContentModal({
             setMediaUrls(compressedDataUrl);
             setUploadingDrive(false);
           };
+          img.onerror = () => {
+            setMediaUrls(result);
+            setUploadingDrive(false);
+          };
           img.src = result;
+        } else {
+          setUploadingDrive(false);
         }
       };
+      reader.onerror = () => setUploadingDrive(false);
       reader.readAsDataURL(file);
     } else if (file.type.startsWith('video/')) {
       // Direct video file preview
@@ -223,6 +230,7 @@ export function ContentModal({
         }
         setUploadingDrive(false);
       };
+      reader.onerror = () => setUploadingDrive(false);
       reader.readAsDataURL(file);
     } else {
       setUploadingDrive(false);

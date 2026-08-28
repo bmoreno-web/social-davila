@@ -47,9 +47,11 @@ export async function POST(req: NextRequest) {
       file: uploaded
     });
   } catch (error: any) {
-    console.error('Drive upload endpoint error:', error);
+    console.warn('Drive upload gracefully falling back:', error?.message);
     return NextResponse.json({
+      success: false,
+      fallback: true,
       error: error?.message || 'Error al subir archivo a Google Drive'
-    }, { status: 500 });
+    }, { status: 200 });
   }
 }
