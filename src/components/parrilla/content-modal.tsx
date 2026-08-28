@@ -148,18 +148,45 @@ export function ContentModal({
     }
   };
 
-  // Handle local file selection with client-side compression/reading
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [uploadingDrive, setUploadingDrive] = useState(false);
+
+  // Handle file upload (Uploads directly to agency's Google Drive or local fallback)
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // If file is image, read as Data URL
+    setUploadingDrive(true);
+    const selectedClient = clients.find((c) => c.id === clientId);
+    const clientName = selectedClient?.name || 'General';
+
+    try {
+      // 1. Try uploading directly to Google Drive
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('clientName', clientName);
+
+      const res = await fetch('/api/upload/drive', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.file?.driveUrl) {
+        setMediaUrls(data.file.driveUrl);
+        setUploadingDrive(false);
+        return;
+      }
+    } catch (driveErr) {
+      console.warn('Google drive upload failed or not configured, using local fallback:', driveErr);
+    }
+
+    // 2. Fallback to client-side Data URL
     if (file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onload = (event) => {
         const result = event.target?.result as string;
         if (result) {
-          // Compress large images via canvas
           const img = new Image();
           img.onload = () => {
             const canvas = document.createElement('canvas');
@@ -178,11 +205,14 @@ export function ContentModal({
             ctx?.drawImage(img, 0, 0, width, height);
             const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
             setMediaUrls(compressedDataUrl);
+            setUploadingDrive(false);
           };
           img.src = result;
         }
       };
       reader.readAsDataURL(file);
+    } else {
+      setUploadingDrive(false);
     }
   };
 
@@ -497,24 +527,33 @@ export function ContentModal({
 
                 {mediaMode === 'UPLOAD' ? (
                   <div
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => !uploadingDrive && fileInputRef.current?.click()}
                     className="border-2 border-dashed border-zinc-700 hover:border-purple-500 bg-zinc-900/50 hover:bg-zinc-900/80 rounded-xl p-4 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-1.5 group"
                   >
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept="image/*"
+                      accept="image/*,video/mp4,video/quicktime,video/webm"
                       onChange={handleFileUpload}
+                      disabled={uploadingDrive}
                       className="hidden"
                     />
                     <div className="h-10 w-10 rounded-full bg-purple-600/20 text-purple-400 group-hover:scale-110 transition-transform flex items-center justify-center">
-                      <Upload className="h-5 w-5" />
+                      {uploadingDrive ? (
+                        <div className="h-5 w-5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Upload className="h-5 w-5" />
+                      )}
                     </div>
                     <p className="text-xs font-semibold text-zinc-200">
-                      {mediaUrls ? 'Cambiar archivo de imagen' : 'Haz clic para subir imagen o arte'}
+                      {uploadingDrive
+                        ? 'Subiendo archivo a Google Drive de Davila PM...'
+                        : mediaUrls
+                        ? 'Cambiar archivo multimedia'
+                        : 'Haz clic para subir arte o video'}
                     </p>
                     <p className="text-[10px] text-zinc-500">
-                      Formatos compatibles: JPG, PNG, WEBP (se optimiza automáticamente)
+                      Formatos: JPG, PNG, WEBP, MP4 (se sube y vincula a Drive)
                     </p>
                   </div>
                 ) : (
