@@ -95,6 +95,9 @@ export function ContentModal({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [uploadingDrive, setUploadingDrive] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [publishSuccess, setPublishSuccess] = useState<string | null>(null);
+  const [copiedToast, setCopiedToast] = useState(false);
 
   useEffect(() => {
     if (post) {
@@ -224,6 +227,40 @@ export function ContentModal({
     } else {
       setUploadingDrive(false);
     }
+  };
+
+  const handlePublishToSocials = async (publishImmediately = false) => {
+    if (!post?.id) return;
+    setPublishing(true);
+    setPublishSuccess(null);
+    try {
+      const res = await fetch(`/api/content-posts/${post.id}/publish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ publishImmediately })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setStatus('PUBLICADO');
+        setPublishSuccess(data.message || '¡Publicación enviada a Metricool exitosamente!');
+        onSaved();
+        setTimeout(() => setPublishSuccess(null), 5000);
+      } else {
+        alert(data.error || 'Error al publicar en redes');
+      }
+    } catch (err: any) {
+      alert('Error de conexión al publicar');
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const handleCopyForMetaSuite = () => {
+    const fullText = `${copy}\n\n${tags ? tags.split(',').map(t => `#${t.trim().replace(/\s+/g, '')}`).join(' ') : ''}`.trim();
+    navigator.clipboard.writeText(fullText);
+    setCopiedToast(true);
+    setTimeout(() => setCopiedToast(false), 3000);
+    window.open('https://business.facebook.com/latest/composer', '_blank');
   };
 
   const handleSave = async (overrideStatus?: ContentPostStatus) => {
@@ -361,6 +398,13 @@ export function ContentModal({
               </button>
             </div>
           </div>
+
+          {publishSuccess && (
+            <div className="mx-6 mt-4 p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
+              <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+              <span>{publishSuccess}</span>
+            </div>
+          )}
 
           {/* Modal Body: 2 Columns */}
           <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -749,13 +793,13 @@ export function ContentModal({
               </Button>
 
               {/* Quick Status Action Buttons */}
-              {status !== 'PENDIENTE_APROBACION' && status !== 'APROBADO' && (
+              {status !== 'PENDIENTE_APROBACION' && status !== 'APROBADO' && status !== 'PUBLICADO' && (
                 <Button
                   type="button"
                   variant="warning"
                   size="sm"
                   onClick={() => handleSave('PENDIENTE_APROBACION')}
-                  disabled={saving}
+                  disabled={saving || publishing}
                   className="text-xs gap-1.5"
                 >
                   <Send className="h-3.5 w-3.5" />
@@ -763,13 +807,13 @@ export function ContentModal({
                 </Button>
               )}
 
-              {status !== 'APROBADO' && (
+              {status !== 'APROBADO' && status !== 'PUBLICADO' && (
                 <Button
                   type="button"
                   variant="emerald"
                   size="sm"
                   onClick={() => handleSave('APROBADO')}
-                  disabled={saving}
+                  disabled={saving || publishing}
                   className="text-xs gap-1.5"
                 >
                   <CheckCircle2 className="h-3.5 w-3.5" />
@@ -777,18 +821,40 @@ export function ContentModal({
                 </Button>
               )}
 
+              {/* Action Buttons for APPROVED Posts */}
               {status === 'APROBADO' && (
-                <Button
-                  type="button"
-                  variant="default"
-                  size="sm"
-                  onClick={() => handleSave('PUBLICADO')}
-                  disabled={saving}
-                  className="text-xs gap-1.5"
-                >
-                  <Share2 className="h-3.5 w-3.5" />
-                  <span>Marcar Publicado</span>
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="glass"
+                    size="sm"
+                    onClick={handleCopyForMetaSuite}
+                    className="text-xs gap-1.5 border-zinc-700 text-zinc-200"
+                    title="Copiar texto con hashtags y abrir Meta Business Suite"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5 text-purple-400" />
+                    <span>{copiedToast ? '¡Copiado!' : 'Meta Suite'}</span>
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="emerald"
+                    size="sm"
+                    onClick={() => handlePublishToSocials(false)}
+                    disabled={publishing}
+                    className="text-xs gap-1.5 font-bold shadow-lg shadow-emerald-500/20"
+                  >
+                    <Share2 className={`h-3.5 w-3.5 ${publishing ? 'animate-spin' : ''}`} />
+                    <span>{publishing ? 'Enviando...' : '🚀 Programar en Redes'}</span>
+                  </Button>
+                </div>
+              )}
+
+              {status === 'PUBLICADO' && (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs font-bold text-emerald-400">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  <span>Publicado en Redes</span>
+                </div>
               )}
 
               <Button

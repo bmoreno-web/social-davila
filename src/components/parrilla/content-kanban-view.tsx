@@ -189,6 +189,18 @@ export function ContentKanbanView({
                         </div>
                       )}
 
+                      {post.status === 'APROBADO' && (
+                        <div className="flex items-center justify-between gap-1 p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-[10px] font-bold text-emerald-400">
+                          <span className="flex items-center gap-1">
+                            <CheckCircle2 className="h-3 w-3" />
+                            <span>Aprobado por Cliente</span>
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
+                            🚀 Publicar
+                          </span>
+                        </div>
+                      )}
+
                       {/* Card Footer: Platforms & Comments */}
                       <div className="flex items-center justify-between pt-2 border-t border-zinc-800/80 text-[10px] text-zinc-400">
                         <span className="font-semibold text-purple-400/80">
