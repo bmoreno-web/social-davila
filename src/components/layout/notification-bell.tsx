@@ -14,7 +14,6 @@ import {
   ExternalLink,
   ChevronRight
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 
 interface NotificationItem {
   id: string;
@@ -35,25 +34,27 @@ export function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const fetchNotifications = async () => {
     try {
       const res = await fetch('/api/notifications');
+      if (!res.ok) return;
       const data = await res.json();
-      if (data.notifications) {
+      if (data && Array.isArray(data.notifications)) {
         setNotifications(data.notifications);
-        setUnreadCount(data.unreadCount || 0);
+        setUnreadCount(Number(data.unreadCount) || 0);
       }
     } catch (e) {
-      console.error('Error fetching notifications:', e);
+      // Silently catch in case of unauthenticated state
     }
   };
 
   useEffect(() => {
+    setMounted(true);
     fetchNotifications();
-    // Poll every 25 seconds
-    const interval = setInterval(fetchNotifications, 25000);
+    const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -68,6 +69,14 @@ export function NotificationBell() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  if (!mounted) {
+    return (
+      <div className="relative p-2 rounded-xl bg-zinc-900/90 border border-zinc-800 text-zinc-400">
+        <Bell className="h-4 w-4" />
+      </div>
+    );
+  }
+
   const handleMarkAllAsRead = async () => {
     setLoading(true);
     try {
@@ -77,7 +86,7 @@ export function NotificationBell() {
         body: JSON.stringify({ markAllAsRead: true })
       });
       if (res.ok) {
-        setNotifications(notifications.map((n) => ({ ...n, read: true })));
+        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
         setUnreadCount(0);
       }
     } catch (e) {
@@ -89,13 +98,15 @@ export function NotificationBell() {
 
   const handleNotificationClick = async (notif: NotificationItem) => {
     if (!notif.read) {
-      fetch('/api/notifications', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: notif.id })
-      });
-      setNotifications(
-        notifications.map((n) => (n.id === notif.id ? { ...n, read: true } : n))
+      try {
+        fetch('/api/notifications', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: notif.id })
+        });
+      } catch (e) {}
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n))
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
     }
@@ -120,12 +131,23 @@ export function NotificationBell() {
     }
   };
 
+  const formatTimestamp = (dateStr: string) => {
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return '';
+      return `${date.getDate()} ${date.toLocaleString('es-ES', { month: 'short' })}`;
+    } catch (e) {
+      return '';
+    }
+  };
+
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Bell Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Notificaciones"
+        type="button"
         className="relative p-2 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white transition-all shadow-sm group"
       >
         <Bell className="h-4 w-4 group-hover:scale-110 transition-transform" />
@@ -156,6 +178,7 @@ export function NotificationBell() {
               <button
                 onClick={handleMarkAllAsRead}
                 disabled={loading}
+                type="button"
                 className="text-[11px] text-purple-400 hover:text-purple-300 font-medium flex items-center gap-1 transition-colors"
               >
                 <CheckCheck className="h-3 w-3" />
@@ -166,16 +189,14 @@ export function NotificationBell() {
 
           {/* Notification List */}
           <div className="max-h-[360px] overflow-y-auto divide-y divide-zinc-800/60">
-            {notifications.length === 0 ? (
+            {!Array.isArray(notifications) || notifications.length === 0 ? (
               <div className="p-8 text-center text-zinc-500 text-xs">
                 <Bell className="h-8 w-8 text-zinc-700 mx-auto mb-2 opacity-50" />
                 <p>No tienes notificaciones pendientes.</p>
               </div>
             ) : (
               notifications.map((n) => {
-                const date = new Date(n.createdAt);
-                const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                const dateStr = date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+                const formattedDate = formatTimestamp(n.createdAt);
 
                 return (
                   <div
@@ -191,9 +212,11 @@ export function NotificationBell() {
                         <p className="text-xs font-bold text-white truncate">
                           {n.title}
                         </p>
-                        <span className="text-[10px] text-zinc-500 shrink-0 font-mono">
-                          {dateStr} • {timeStr}
-                        </span>
+                        {formattedDate && (
+                          <span className="text-[10px] text-zinc-500 shrink-0 font-mono">
+                            {formattedDate}
+                          </span>
+                        )}
                       </div>
                       <p className="text-[11px] text-zinc-300 line-clamp-2 leading-relaxed">
                         {n.message}
