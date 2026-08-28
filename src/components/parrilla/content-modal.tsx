@@ -106,7 +106,10 @@ export function ContentModal({
       setCopy(post.copy || '');
       
       const d = new Date(post.scheduledDate);
-      const datePart = d.toISOString().split('T')[0];
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const datePart = `${year}-${month}-${day}`;
       const hours = String(d.getHours()).padStart(2, '0');
       const mins = String(d.getMinutes()).padStart(2, '0');
       setScheduledDate(datePart);
@@ -126,8 +129,11 @@ export function ContentModal({
       setClientId(selectedClientId && selectedClientId !== 'ALL' ? selectedClientId : (clients[0]?.id || ''));
       setTitle('');
       setCopy('');
-      const today = new Date().toISOString().split('T')[0];
-      setScheduledDate(today);
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      setScheduledDate(`${year}-${month}-${day}`);
       setScheduledTime('16:00');
       setSelectedPlatforms(['INSTAGRAM']);
       setContentType('IMAGE');
@@ -284,13 +290,17 @@ export function ContentModal({
     setSaving(true);
     try {
       const finalStatus = overrideStatus || status;
-      const combinedDateTime = new Date(`${scheduledDate}T${scheduledTime}:00`);
+      const [y, m, d] = (scheduledDate || '').split('-').map(Number);
+      const [h, min] = (scheduledTime || '14:00').split(':').map(Number);
+      const combinedDateTime = !isNaN(y) && !isNaN(m) && !isNaN(d)
+        ? new Date(y, m - 1, d, !isNaN(h) ? h : 14, !isNaN(min) ? min : 0, 0)
+        : new Date();
 
       const payload = {
         clientId,
         title,
         copy,
-        scheduledDate: isNaN(combinedDateTime.getTime()) ? new Date() : combinedDateTime,
+        scheduledDate: combinedDateTime,
         platforms: selectedPlatforms.join(','),
         contentType,
         mediaUrls,

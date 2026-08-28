@@ -283,8 +283,20 @@ export default function ClientPortalParrillaPage() {
               : 'No se encontraron publicaciones en esta sección.'}
           </h3>
           <p className="text-xs text-zinc-400 mt-1 max-w-md">
-            Tu equipo de Davila PM te notificará en cuanto se carguen nuevas propuestas de contenido.
+            {statusFilter === 'PENDIENTE' && posts.length > 0
+              ? `Tienes ${posts.length} ${posts.length === 1 ? 'publicación' : 'publicaciones'} en otras secciones (Aprobadas / Histórico).`
+              : 'Tu equipo de Davila PM te notificará en cuanto se carguen nuevas propuestas de contenido.'}
           </p>
+          {statusFilter === 'PENDIENTE' && posts.length > 0 && (
+            <Button
+              onClick={() => setStatusFilter('TODAS')}
+              variant="outline"
+              size="sm"
+              className="mt-4 text-xs border-zinc-700 text-zinc-200"
+            >
+              Ver todas las publicaciones ({posts.length})
+            </Button>
+          )}
         </Card>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -293,12 +305,14 @@ export default function ClientPortalParrillaPage() {
             const Icon = FORMAT_ICONS[post.contentType] || ImageIcon;
             const pDate = new Date(post.scheduledDate);
             const dateFormatted = pDate.toLocaleDateString('es-ES', {
+              timeZone: 'America/Bogota',
               weekday: 'short',
               day: 'numeric',
               month: 'long',
               year: 'numeric'
             });
-            const timeFormatted = pDate.toLocaleTimeString([], {
+            const timeFormatted = pDate.toLocaleTimeString('es-ES', {
+              timeZone: 'America/Bogota',
               hour: '2-digit',
               minute: '2-digit'
             });

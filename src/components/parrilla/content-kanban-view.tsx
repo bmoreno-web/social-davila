@@ -124,10 +124,12 @@ export function ContentKanbanView({
                   const Icon = FORMAT_ICONS[post.contentType] || ImageIcon;
                   const pDate = new Date(post.scheduledDate);
                   const formattedDate = pDate.toLocaleDateString('es-ES', {
+                    timeZone: 'America/Bogota',
                     day: 'numeric',
                     month: 'short'
                   });
-                  const formattedTime = pDate.toLocaleTimeString([], {
+                  const formattedTime = pDate.toLocaleTimeString('es-ES', {
+                    timeZone: 'America/Bogota',
                     hour: '2-digit',
                     minute: '2-digit'
                   });
