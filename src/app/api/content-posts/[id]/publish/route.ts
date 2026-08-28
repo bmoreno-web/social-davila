@@ -52,12 +52,15 @@ export async function POST(
       }
     }
 
-    // 2. Update status in Database
+    // 2. Update status & metricoolPostId in Database
+    const metricoolId = metricoolResult?.data?.data?.id || metricoolResult?.data?.id;
+
     const updatedPost = await prisma.contentPost.update({
       where: { id },
       data: {
         status: 'PUBLICADO',
-        clientFeedback: publishImmediately ? 'Publicado inmediatamente en redes' : 'Programado para publicación automática'
+        clientFeedback: publishImmediately ? 'Publicado inmediatamente en redes' : 'Programado para publicación automática',
+        metricoolPostId: metricoolId ? String(metricoolId) : undefined
       },
       include: {
         client: true,

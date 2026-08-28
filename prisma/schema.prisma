@@ -186,6 +186,7 @@ model ContentPost {
   approvedBy      String?          // Name or email of client who approved
   createdById     String?
   tags            String?          // Optional tags / campaign name
+  metricoolPostId String?          // ID of post in Metricool Scheduler for two-way sync
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { getSession } from '@/lib/auth/session';
+import { metricoolService } from '@/lib/metricool/client';
 
 export async function GET(
   req: NextRequest,
@@ -124,6 +125,19 @@ export async function DELETE(
 
     if (!post) {
       return NextResponse.json({ error: 'Publicación no encontrada' }, { status: 404 });
+    }
+
+    // If post was synced to Metricool, delete it from Metricool scheduler as well
+    if (post.metricoolPostId && post.client?.metricoolBlogId) {
+      try {
+        await metricoolService.deleteScheduledPost(
+          post.client.metricoolBlogId,
+          post.client.metricoolUserId || '1395490',
+          post.metricoolPostId
+        );
+      } catch (err) {
+        console.warn('Could not delete post from Metricool scheduler:', err);
+      }
     }
 
     await prisma.contentPost.delete({ where: { id } });

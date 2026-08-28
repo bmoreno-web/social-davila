@@ -370,6 +370,21 @@ export class MetricoolService {
   }
 
   /**
+   * Eliminar publicación del planificador de Metricool
+   */
+  async deleteScheduledPost(blogId: string | number, userId: string | number, postId: string | number): Promise<boolean> {
+    try {
+      await this.request<any>(`/v2/scheduler/posts/${postId}?blogId=${blogId}&userId=${userId}`, {
+        method: 'DELETE'
+      });
+      return true;
+    } catch (error: any) {
+      console.warn(`Could not delete post ${postId} from Metricool:`, error.message);
+      return false;
+    }
+  }
+
+  /**
    * Verificar estado de la conexión a la API
    */
   async testConnection(): Promise<{ success: boolean; profilesCount: number; message: string }> {
