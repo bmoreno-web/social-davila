@@ -6,6 +6,7 @@ import { LogOut, BarChart3, ShieldCheck, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PortalLogoutButton } from '@/components/portal/portal-logout-button';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
+import { NotificationBell } from '@/components/layout/notification-bell';
 
 export default async function PortalLayout({
   children,
@@ -45,6 +46,9 @@ export default async function PortalLayout({
               </Button>
             </Link>
           )}
+
+          {/* Notification Center */}
+          <NotificationBell />
 
           {/* Dark / Light Toggle */}
           <ThemeToggle />

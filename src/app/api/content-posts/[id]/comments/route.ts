@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { getSession } from '@/lib/auth/session';
+import { createAndSendNotification } from '@/lib/notifications/email-service';
 
 export async function POST(
   req: NextRequest,
@@ -19,7 +20,8 @@ export async function POST(
     }
 
     const post = await prisma.contentPost.findUnique({
-      where: { id }
+      where: { id },
+      include: { client: true }
     });
 
     if (!post) {
@@ -38,6 +40,24 @@ export async function POST(
         text: text.trim()
       }
     });
+
+    // Send notification
+    try {
+      const isClientAuthor = session.role === 'CLIENT';
+      await createAndSendNotification({
+        type: 'NEW_COMMENT',
+        title: `💬 Nuevo mensaje de ${session.name}`,
+        message: `${session.name} comentó en "${post.title}": "${text.trim().slice(0, 100)}${text.length > 100 ? '...' : ''}"`,
+        link: isClientAuthor ? '/parrilla' : '/portal/parrilla',
+        clientId: post.clientId,
+        clientName: post.client.name,
+        recipientRole: isClientAuthor ? 'AGENCY' : 'CLIENT',
+        recipientEmail: !isClientAuthor ? (post.client.contactEmail || undefined) : undefined,
+        recipientName: !isClientAuthor ? (post.client.contactName || post.client.name) : 'Equipo Davila PM',
+        postTitle: post.title,
+        feedbackText: text.trim()
+      });
+    } catch (e) {}
 
     return NextResponse.json({ success: true, comment });
   } catch (error: any) {

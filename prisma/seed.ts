@@ -9,6 +9,7 @@ async function main() {
   // 1. Clear existing data if any
   await prisma.auditLog.deleteMany();
   await prisma.syncLog.deleteMany();
+  await prisma.notification.deleteMany();
   await prisma.contentComment.deleteMany();
   await prisma.contentPost.deleteMany();
   await prisma.recommendation.deleteMany();
@@ -441,7 +442,47 @@ Durante el período evaluado, la presencia digital de **Acesco Colombia** experi
     }
   });
 
-  // 8. Initial Audit Log
+  // 8. Seed Initial In-App Notifications
+  await prisma.notification.create({
+    data: {
+      clientId: acescoClient.id,
+      recipientRole: 'AGENCY',
+      type: 'CHANGES_REQUESTED',
+      title: '⚠️ Cambios solicitados en publicación',
+      message: 'Carlos Mendoza (Acesco) solicitó corregir el dato técnico al 75% en el Carrusel Galvalume.',
+      link: '/parrilla',
+      read: false,
+      createdAt: new Date('2026-08-28T09:15:00Z')
+    }
+  });
+
+  await prisma.notification.create({
+    data: {
+      clientId: acescoClient.id,
+      recipientRole: 'AGENCY',
+      type: 'APPROVED',
+      title: '🎉 Publicación Aprobada por Cliente',
+      message: 'Acesco Colombia aprobó el post "Caso de Éxito: Mega Puente Estructura Metálica".',
+      link: '/parrilla',
+      read: false,
+      createdAt: new Date('2026-08-28T08:00:00Z')
+    }
+  });
+
+  await prisma.notification.create({
+    data: {
+      clientId: acescoClient.id,
+      recipientRole: 'CLIENT',
+      type: 'REVIEW_REQUESTED',
+      title: '📋 Nueva propuesta lista para tu revisión',
+      message: 'El equipo de Davila PM ha cargado el Reel de Cubiertas para tu aprobación.',
+      link: '/portal/parrilla',
+      read: false,
+      createdAt: new Date('2026-08-27T14:30:00Z')
+    }
+  });
+
+  // 9. Initial Audit Log
   await prisma.auditLog.create({
     data: {
       userId: adminUser.id,

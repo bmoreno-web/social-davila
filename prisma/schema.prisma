@@ -46,6 +46,7 @@ model Client {
   recommendations   Recommendation[]
   posts             ReportPost[]
   contentPosts      ContentPost[]
+  notifications     Notification[]
   syncLogs          SyncLog[]
 }
 
@@ -201,4 +202,19 @@ model ContentComment {
   text          String
   createdAt     DateTime    @default(now())
 }
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String?
+  clientId    String?
+  client      Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  recipientRole String @default("AGENCY") // "AGENCY" | "CLIENT" | "ALL"
+  title       String
+  message     String
+  type        String   // "CHANGES_REQUESTED" | "APPROVED" | "REVIEW_REQUESTED" | "NEW_COMMENT" | "SYSTEM"
+  link        String?  // URL to navigate
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
 

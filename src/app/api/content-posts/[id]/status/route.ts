@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { getSession } from '@/lib/auth/session';
+import { createAndSendNotification } from '@/lib/notifications/email-service';
 
 export async function PATCH(
   req: NextRequest,
@@ -62,7 +63,7 @@ export async function PATCH(
       }
     });
 
-    // Log audit
+    // 1. Log audit
     try {
       if (session.userId) {
         await prisma.auditLog.create({
@@ -78,6 +79,49 @@ export async function PATCH(
         });
       }
     } catch (e) {}
+
+    // 2. Trigger In-App & Email Notifications
+    try {
+      if (status === 'CAMBIOS_SOLICITADOS') {
+        await createAndSendNotification({
+          type: 'CHANGES_REQUESTED',
+          title: '⚠️ Cambios solicitados en publicación',
+          message: `El cliente ${updated.client.name} ha solicitado ajustes en el post "${updated.title}".`,
+          link: '/parrilla',
+          clientId: updated.clientId,
+          clientName: updated.client.name,
+          recipientRole: 'AGENCY',
+          postTitle: updated.title,
+          feedbackText: feedback || updated.clientFeedback || undefined
+        });
+      } else if (status === 'APROBADO') {
+        await createAndSendNotification({
+          type: 'APPROVED',
+          title: '🎉 Publicación Aprobada por Cliente',
+          message: `El cliente ${updated.client.name} ha aprobado el post "${updated.title}".`,
+          link: '/parrilla',
+          clientId: updated.clientId,
+          clientName: updated.client.name,
+          recipientRole: 'AGENCY',
+          postTitle: updated.title
+        });
+      } else if (status === 'PENDIENTE_APROBACION') {
+        await createAndSendNotification({
+          type: 'REVIEW_REQUESTED',
+          title: '📋 Nueva publicación lista para tu aprobación',
+          message: `El equipo de Davila PM ha preparado una propuesta de contenido para tu revisión.`,
+          link: '/portal/parrilla',
+          clientId: updated.clientId,
+          clientName: updated.client.name,
+          recipientEmail: updated.client.contactEmail || undefined,
+          recipientName: updated.client.contactName || updated.client.name,
+          recipientRole: 'CLIENT',
+          postTitle: updated.title
+        });
+      }
+    } catch (notifErr) {
+      console.error('Notification dispatch error:', notifErr);
+    }
 
     return NextResponse.json({ success: true, post: updated });
   } catch (error: any) {
