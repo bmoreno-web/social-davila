@@ -34,18 +34,21 @@ export async function POST(
 
     // 1. Send to Metricool Scheduler
     let metricoolResult = null;
-    if (post.client.metricoolBlogId && post.client.metricoolUserId) {
+    const blogId = post.client.metricoolBlogId;
+    const userId = post.client.metricoolUserId || '1395490';
+
+    if (blogId) {
       try {
         metricoolResult = await metricoolService.schedulePost({
-          blogId: post.client.metricoolBlogId,
-          userId: post.client.metricoolUserId,
+          blogId,
+          userId,
           text: post.copy,
           dateTime: publishDate,
           providers,
           mediaUrls: post.mediaUrls ? [post.mediaUrls] : undefined
         });
       } catch (err: any) {
-        console.warn('Metricool schedule API warning:', err);
+        console.error('Metricool schedule API error:', err);
       }
     }
 

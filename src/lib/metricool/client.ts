@@ -269,28 +269,60 @@ export class MetricoolService {
   }): Promise<any> {
     const { blogId, userId, text, dateTime, providers, mediaUrls, isDraft = false } = params;
 
-    const payload = {
+    // Ensure valid dateTime in the future
+    let postDate = new Date(dateTime);
+    if (isNaN(postDate.getTime()) || postDate.getTime() <= Date.now()) {
+      // Default to 5 minutes in the future if immediate / past
+      postDate = new Date(Date.now() + 5 * 60 * 1000);
+    }
+
+    const year = postDate.getFullYear();
+    const month = String(postDate.getMonth() + 1).padStart(2, '0');
+    const day = String(postDate.getDate()).padStart(2, '0');
+    const hours = String(postDate.getHours()).padStart(2, '0');
+    const minutes = String(postDate.getMinutes()).padStart(2, '0');
+    const seconds = '00';
+    const formattedDateTime = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+
+    // Filter valid networks
+    const validNetworks = providers
+      .map((p) => p.toLowerCase())
+      .filter((p) => ['instagram', 'facebook', 'tiktok', 'linkedin', 'twitter', 'threads', 'pinterest'].includes(p));
+
+    const finalProviders = validNetworks.length > 0
+      ? validNetworks.map((network) => ({ network }))
+      : [{ network: 'instagram' }, { network: 'facebook' }];
+
+    // Filter external http media
+    const validMedia = mediaUrls?.filter((url) => url && typeof url === 'string' && url.startsWith('http')) || [];
+
+    const payload: any = {
       blogId: Number(blogId),
       userId: Number(userId),
       text,
-      dateTime: dateTime.includes('T') ? dateTime : `${dateTime}T14:00:00`,
-      providers: providers.map((p) => p.toLowerCase()),
-      media: mediaUrls && mediaUrls.length > 0 ? mediaUrls : undefined,
+      publicationDate: {
+        dateTime: formattedDateTime,
+        timezone: 'America/Bogota'
+      },
+      providers: finalProviders,
+      autoPublish: !isDraft,
       draft: isDraft
     };
 
+    if (validMedia.length > 0) {
+      payload.media = validMedia;
+      payload.saveExternalMediaFiles = true;
+    }
+
     try {
-      const res = await this.request<any>('/v2/scheduler/posts', {
+      const res = await this.request<any>(`/v2/scheduler/posts?blogId=${blogId}&userId=${userId}`, {
         method: 'POST',
         body: JSON.stringify(payload)
       });
       return { success: true, data: res };
     } catch (error: any) {
-      console.warn('Metricool scheduler response:', error.message);
-      return {
-        success: true,
-        message: 'Publicación procesada y enviada a la cola de publicación de Metricool.'
-      };
+      console.error('Metricool scheduler error:', error.message);
+      throw error;
     }
   }
 
