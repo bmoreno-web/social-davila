@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
   Calendar as CalendarIcon,
@@ -19,11 +19,17 @@ import {
   Instagram,
   Facebook,
   Linkedin,
-  Share2
+  Share2,
+  Upload,
+  Link2,
+  Maximize2,
+  Eye,
+  FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ContentPost, ContentPostStatus, ContentType, STATUS_CONFIG } from './types';
+import { normalizeMediaUrl } from '@/lib/utils';
 
 interface ContentModalProps {
   isOpen: boolean;
@@ -76,6 +82,11 @@ export function ContentModal({
   const [status, setStatus] = useState<ContentPostStatus>('BORRADOR');
   const [clientFeedback, setClientFeedback] = useState('');
 
+  // Media Tab Mode: 'UPLOAD' or 'URL'
+  const [mediaMode, setMediaMode] = useState<'UPLOAD' | 'URL'>('UPLOAD');
+  const [isZoomOpen, setIsZoomOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // Comment thread
   const [newComment, setNewComment] = useState('');
   const [comments, setComments] = useState<any[]>([]);
@@ -104,6 +115,7 @@ export function ContentModal({
       setStatus(post.status);
       setClientFeedback(post.clientFeedback || '');
       setComments(post.comments || []);
+      setMediaMode(post.mediaUrls && !post.mediaUrls.startsWith('data:') ? 'URL' : 'UPLOAD');
     } else {
       // Default new
       setClientId(selectedClientId && selectedClientId !== 'ALL' ? selectedClientId : (clients[0]?.id || ''));
@@ -119,6 +131,7 @@ export function ContentModal({
       setStatus('BORRADOR');
       setClientFeedback('');
       setComments([]);
+      setMediaMode('UPLOAD');
     }
   }, [post, isOpen, selectedClientId, clients]);
 
@@ -131,6 +144,44 @@ export function ContentModal({
       }
     } else {
       setSelectedPlatforms([...selectedPlatforms, pId]);
+    }
+  };
+
+  // Handle local file selection with client-side compression/reading
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // If file is image, read as Data URL
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        if (result) {
+          // Compress large images via canvas
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 1200;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > MAX_WIDTH) {
+              height = Math.round((height * MAX_WIDTH) / width);
+              width = MAX_WIDTH;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0, width, height);
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            setMediaUrls(compressedDataUrl);
+          };
+          img.src = result;
+        }
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -233,407 +284,516 @@ export function ContentModal({
     }
   };
 
+  const normalizedUrl = normalizeMediaUrl(mediaUrls);
+  const isCanvaOrFigma = mediaUrls.includes('canva.com') || mediaUrls.includes('figma.com');
   const statusCfg = STATUS_CONFIG[status] || STATUS_CONFIG.BORRADOR;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-[#0e1118] border border-zinc-800 rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden text-zinc-100">
-        {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/50">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
-              <CalendarIcon className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-white font-display">
-                {post ? 'Editar Publicación de Parrilla' : 'Nueva Publicación Planificada'}
-              </h2>
-              <p className="text-xs text-zinc-400">
-                Parrilla editorial & flujo de aprobación Davila PM
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Badge variant={statusCfg.badgeVariant} className="text-xs px-2.5 py-1">
-              {statusCfg.label}
-            </Badge>
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Modal Body: 2 Columns */}
-        <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Column: Form (7 cols) */}
-          <div className="lg:col-span-7 space-y-4">
-            {/* Client Selector */}
-            <div>
-              <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
-                Cliente
-              </label>
-              <select
-                value={clientId}
-                onChange={(e) => setClientId(e.target.value)}
-                disabled={Boolean(post)}
-                className="w-full bg-zinc-900 border border-zinc-700/80 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 disabled:opacity-60"
-              >
-                {clients.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Title / Topic */}
-            <div>
-              <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
-                Título del Post / Concepto
-              </label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Ej. Reel: 3 Consejos de diseño estructural..."
-                className="w-full bg-zinc-900 border border-zinc-700/80 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-              />
-            </div>
-
-            {/* Platform Selection */}
-            <div>
-              <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
-                Redes Sociales de Destino
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {AVAILABLE_PLATFORMS.map((plat) => {
-                  const isSelected = selectedPlatforms.includes(plat.id);
-                  return (
-                    <button
-                      key={plat.id}
-                      type="button"
-                      onClick={() => togglePlatform(plat.id)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 ${
-                        isSelected
-                          ? plat.color
-                          : 'bg-zinc-900/60 border-zinc-800 text-zinc-500 hover:text-zinc-300 hover:border-zinc-700'
-                      }`}
-                    >
-                      {plat.label}
-                    </button>
-                  );
-                })}
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="bg-[#0e1118] border border-zinc-800 rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden text-zinc-100">
+          {/* Modal Header */}
+          <div className="px-6 py-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/50">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                <CalendarIcon className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-white font-display">
+                  {post ? 'Editar Publicación de Parrilla' : 'Nueva Publicación Planificada'}
+                </h2>
+                <p className="text-xs text-zinc-400">
+                  Parrilla editorial & flujo de aprobación Davila PM
+                </p>
               </div>
             </div>
 
-            {/* Format & Scheduling Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Content Type */}
+            <div className="flex items-center gap-2">
+              <Badge variant={statusCfg.badgeVariant} className="text-xs px-2.5 py-1">
+                {statusCfg.label}
+              </Badge>
+              <button
+                onClick={onClose}
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Modal Body: 2 Columns */}
+          <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Left Column: Form (7 cols) */}
+            <div className="lg:col-span-7 space-y-4">
+              {/* Client Selector */}
               <div>
                 <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
-                  Formato
+                  Cliente
                 </label>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {CONTENT_TYPES.map((t) => {
-                    const Icon = t.icon;
-                    const isSelected = contentType === t.id;
+                <select
+                  value={clientId}
+                  onChange={(e) => setClientId(e.target.value)}
+                  disabled={Boolean(post)}
+                  className="w-full bg-zinc-900 border border-zinc-700/80 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 disabled:opacity-60"
+                >
+                  {clients.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Title / Topic */}
+              <div>
+                <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
+                  Título del Post / Concepto
+                </label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Ej. Reel: 3 Consejos de diseño estructural..."
+                  className="w-full bg-zinc-900 border border-zinc-700/80 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                />
+              </div>
+
+              {/* Platform Selection */}
+              <div>
+                <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
+                  Redes Sociales de Destino
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {AVAILABLE_PLATFORMS.map((plat) => {
+                    const isSelected = selectedPlatforms.includes(plat.id);
                     return (
                       <button
-                        key={t.id}
+                        key={plat.id}
                         type="button"
-                        onClick={() => setContentType(t.id)}
-                        className={`p-2 rounded-lg text-xs font-medium border flex flex-col items-center gap-1 transition-all ${
+                        onClick={() => togglePlatform(plat.id)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 ${
                           isSelected
-                            ? 'bg-purple-600/20 border-purple-500 text-purple-300 shadow-sm'
-                            : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
+                            ? plat.color
+                            : 'bg-zinc-900/60 border-zinc-800 text-zinc-500 hover:text-zinc-300 hover:border-zinc-700'
                         }`}
                       >
-                        <Icon className="h-4 w-4" />
-                        <span>{t.label}</span>
+                        {plat.label}
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Date & Time */}
+              {/* Format & Scheduling Row */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Content Type */}
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
+                    Formato
+                  </label>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {CONTENT_TYPES.map((t) => {
+                      const Icon = t.icon;
+                      const isSelected = contentType === t.id;
+                      return (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => setContentType(t.id)}
+                          className={`p-2 rounded-lg text-xs font-medium border flex flex-col items-center gap-1 transition-all ${
+                            isSelected
+                              ? 'bg-purple-600/20 border-purple-500 text-purple-300 shadow-sm'
+                              : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
+                          }`}
+                        >
+                          <Icon className="h-4 w-4" />
+                          <span>{t.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Date & Time */}
+                <div className="space-y-2">
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1">
+                      Fecha Planificada
+                    </label>
+                    <input
+                      type="date"
+                      value={scheduledDate}
+                      onChange={(e) => setScheduledDate(e.target.value)}
+                      className="w-full bg-zinc-900 border border-zinc-700/80 rounded-xl px-3 py-2 text-xs text-zinc-100 focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1">
+                      Hora Sugerida
+                    </label>
+                    <input
+                      type="time"
+                      value={scheduledTime}
+                      onChange={(e) => setScheduledTime(e.target.value)}
+                      className="w-full bg-zinc-900 border border-zinc-700/80 rounded-xl px-3 py-2 text-xs text-zinc-100 focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Copy / Caption */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+                    Copy / Texto de la Publicación
+                  </label>
+                  <span className="text-[11px] text-zinc-500">
+                    {copy.length} caracteres
+                  </span>
+                </div>
+                <textarea
+                  rows={5}
+                  value={copy}
+                  onChange={(e) => setCopy(e.target.value)}
+                  placeholder="Escribe el texto persuasivo, llamadas a la acción y hashtags..."
+                  className="w-full bg-zinc-900 border border-zinc-700/80 rounded-xl p-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 font-sans leading-relaxed"
+                />
+              </div>
+
+              {/* Media Art Upload & URL Selector */}
               <div className="space-y-2">
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1">
-                    Fecha Planificada
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+                    Arte / Creativo de la Publicación
                   </label>
-                  <input
-                    type="date"
-                    value={scheduledDate}
-                    onChange={(e) => setScheduledDate(e.target.value)}
-                    className="w-full bg-zinc-900 border border-zinc-700/80 rounded-xl px-3 py-2 text-xs text-zinc-100 focus:outline-none focus:border-purple-500"
-                  />
+                  <div className="flex items-center gap-1 p-0.5 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px]">
+                    <button
+                      type="button"
+                      onClick={() => setMediaMode('UPLOAD')}
+                      className={`px-2 py-0.5 rounded font-medium transition-colors flex items-center gap-1 ${
+                        mediaMode === 'UPLOAD'
+                          ? 'bg-purple-600 text-white'
+                          : 'text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      <Upload className="h-2.5 w-2.5" />
+                      <span>Subir Imagen</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMediaMode('URL')}
+                      className={`px-2 py-0.5 rounded font-medium transition-colors flex items-center gap-1 ${
+                        mediaMode === 'URL'
+                          ? 'bg-purple-600 text-white'
+                          : 'text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      <Link2 className="h-2.5 w-2.5" />
+                      <span>Pegar Enlace (Drive / Web)</span>
+                    </button>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1">
-                    Hora Sugerida
-                  </label>
-                  <input
-                    type="time"
-                    value={scheduledTime}
-                    onChange={(e) => setScheduledTime(e.target.value)}
-                    className="w-full bg-zinc-900 border border-zinc-700/80 rounded-xl px-3 py-2 text-xs text-zinc-100 focus:outline-none focus:border-purple-500"
-                  />
-                </div>
-              </div>
-            </div>
 
-            {/* Copy / Caption */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
-                  Copy / Texto de la Publicación
-                </label>
-                <span className="text-[11px] text-zinc-500">
-                  {copy.length} caracteres
-                </span>
-              </div>
-              <textarea
-                rows={5}
-                value={copy}
-                onChange={(e) => setCopy(e.target.value)}
-                placeholder="Escribe el texto persuasivo, llamadas a la acción y hashtags..."
-                className="w-full bg-zinc-900 border border-zinc-700/80 rounded-xl p-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 font-sans leading-relaxed"
-              />
-            </div>
-
-            {/* Media URL / Drive preview */}
-            <div>
-              <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
-                URL de Arte / Vista Previa (Imagen o Enlace Drive/Figma)
-              </label>
-              <input
-                type="text"
-                value={mediaUrls}
-                onChange={(e) => setMediaUrls(e.target.value)}
-                placeholder="https://images.unsplash.com/... o enlace de recurso"
-                className="w-full bg-zinc-900 border border-zinc-700/80 rounded-xl px-3.5 py-2 text-xs text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-purple-500"
-              />
-            </div>
-
-            {/* Tags / Campaign */}
-            <div>
-              <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
-                Etiquetas / Campaña (Opcional)
-              </label>
-              <input
-                type="text"
-                value={tags}
-                onChange={(e) => setTags(e.target.value)}
-                placeholder="Ej. Black Friday, Educativo, Producto Estrella"
-                className="w-full bg-zinc-900 border border-zinc-700/80 rounded-xl px-3.5 py-2 text-xs text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-purple-500"
-              />
-            </div>
-          </div>
-
-          {/* Right Column: Visual Preview & Comments Thread (5 cols) */}
-          <div className="lg:col-span-5 flex flex-col space-y-4 border-t lg:border-t-0 lg:border-l border-zinc-800 lg:pl-6">
-            {/* Visual Media Card Mockup */}
-            <div className="bg-zinc-950 rounded-xl border border-zinc-800 p-3 space-y-2">
-              <div className="flex items-center justify-between text-xs text-zinc-400">
-                <span className="font-semibold flex items-center gap-1.5">
-                  <Sparkles className="h-3.5 w-3.5 text-purple-400" />
-                  Previsualización Arte
-                </span>
-                <span className="text-[10px] uppercase font-bold text-zinc-500">
-                  {contentType}
-                </span>
-              </div>
-
-              {mediaUrls ? (
-                <div className="relative aspect-video rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900 flex items-center justify-center">
-                  <img
-                    src={mediaUrls}
-                    alt="Arte Preview"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLElement).style.display = 'none';
-                    }}
-                  />
-                </div>
-              ) : (
-                <div className="aspect-video rounded-lg border border-dashed border-zinc-800 bg-zinc-900/40 flex flex-col items-center justify-center text-zinc-500 p-4 text-center">
-                  <ImageIcon className="h-8 w-8 text-zinc-600 mb-1" />
-                  <p className="text-xs">Sin imagen o video adjunto</p>
-                  <p className="text-[10px] text-zinc-600">Pega un enlace arriba para previsualizar</p>
-                </div>
-              )}
-            </div>
-
-            {/* Client Feedback Banner if present */}
-            {clientFeedback && (
-              <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-3 space-y-1">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-rose-400">
-                  <AlertCircle className="h-4 w-4" />
-                  <span>Observación del Cliente:</span>
-                </div>
-                <p className="text-xs text-zinc-300 italic pl-5">
-                  "{clientFeedback}"
-                </p>
-              </div>
-            )}
-
-            {/* Comments / Revision Thread */}
-            <div className="flex-1 flex flex-col min-h-[220px] bg-zinc-950/60 rounded-xl border border-zinc-800 p-3">
-              <div className="flex items-center gap-2 text-xs font-semibold text-zinc-300 pb-2 border-b border-zinc-800">
-                <MessageSquare className="h-3.5 w-3.5 text-purple-400" />
-                <span>Hilo de Comentarios y Ajustes</span>
-                <span className="ml-auto text-[10px] text-zinc-500">
-                  {comments.length}
-                </span>
-              </div>
-
-              <div className="flex-1 overflow-y-auto py-2 space-y-2 max-h-[200px] text-xs">
-                {comments.length === 0 ? (
-                  <p className="text-center text-zinc-500 py-6 text-xs">
-                    No hay comentarios en esta publicación aún.
-                  </p>
+                {mediaMode === 'UPLOAD' ? (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-zinc-700 hover:border-purple-500 bg-zinc-900/50 hover:bg-zinc-900/80 rounded-xl p-4 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-1.5 group"
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                    <div className="h-10 w-10 rounded-full bg-purple-600/20 text-purple-400 group-hover:scale-110 transition-transform flex items-center justify-center">
+                      <Upload className="h-5 w-5" />
+                    </div>
+                    <p className="text-xs font-semibold text-zinc-200">
+                      {mediaUrls ? 'Cambiar archivo de imagen' : 'Haz clic para subir imagen o arte'}
+                    </p>
+                    <p className="text-[10px] text-zinc-500">
+                      Formatos compatibles: JPG, PNG, WEBP (se optimiza automáticamente)
+                    </p>
+                  </div>
                 ) : (
-                  comments.map((comm) => {
-                    const isClient = comm.authorRole === 'CLIENT';
-                    return (
-                      <div
-                        key={comm.id}
-                        className={`p-2.5 rounded-xl border ${
-                          isClient
-                            ? 'bg-amber-500/10 border-amber-500/20 ml-3'
-                            : 'bg-zinc-900 border-zinc-800 mr-3'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className={`font-semibold text-[11px] ${isClient ? 'text-amber-400' : 'text-purple-300'}`}>
-                            {comm.authorName}
-                          </span>
-                          <span className="text-[9px] text-zinc-500">
-                            {new Date(comm.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-                        <p className="text-zinc-300 leading-snug">{comm.text}</p>
-                      </div>
-                    );
-                  })
+                  <div className="space-y-1">
+                    <input
+                      type="text"
+                      value={mediaUrls}
+                      onChange={(e) => setMediaUrls(e.target.value)}
+                      placeholder="Pega enlace de Google Drive, Dropbox, Canva, Figma o URL de imagen..."
+                      className="w-full bg-zinc-900 border border-zinc-700/80 rounded-xl px-3.5 py-2 text-xs text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-purple-500"
+                    />
+                    <p className="text-[10px] text-zinc-500 italic pl-1">
+                      💡 Enlaces de Google Drive y Dropbox se transforman automáticamente a vista previa en directo.
+                    </p>
+                  </div>
                 )}
               </div>
 
-              {/* Add Comment Form */}
-              {post?.id && (
-                <form onSubmit={handleAddComment} className="pt-2 border-t border-zinc-800 flex gap-2">
-                  <input
-                    type="text"
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Escribir mensaje para el cliente..."
-                    className="flex-1 bg-zinc-900 border border-zinc-700/80 rounded-lg px-2.5 py-1.5 text-xs text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-purple-500"
-                  />
-                  <Button
-                    type="submit"
-                    size="sm"
-                    variant="default"
-                    disabled={loadingComment || !newComment.trim()}
-                    className="px-3 text-xs"
+              {/* Tags / Campaign */}
+              <div>
+                <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
+                  Etiquetas / Campaña (Opcional)
+                </label>
+                <input
+                  type="text"
+                  value={tags}
+                  onChange={(e) => setTags(e.target.value)}
+                  placeholder="Ej. Black Friday, Educativo, Producto Estrella"
+                  className="w-full bg-zinc-900 border border-zinc-700/80 rounded-xl px-3.5 py-2 text-xs text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-purple-500"
+                />
+              </div>
+            </div>
+
+            {/* Right Column: Visual Preview & Comments Thread (5 cols) */}
+            <div className="lg:col-span-5 flex flex-col space-y-4 border-t lg:border-t-0 lg:border-l border-zinc-800 lg:pl-6">
+              {/* Visual Media Card Mockup */}
+              <div className="bg-zinc-950 rounded-xl border border-zinc-800 p-3 space-y-2">
+                <div className="flex items-center justify-between text-xs text-zinc-400">
+                  <span className="font-semibold flex items-center gap-1.5">
+                    <Sparkles className="h-3.5 w-3.5 text-purple-400" />
+                    Previsualización Arte
+                  </span>
+                  <span className="text-[10px] uppercase font-bold text-zinc-500">
+                    {contentType}
+                  </span>
+                </div>
+
+                {normalizedUrl && !isCanvaOrFigma ? (
+                  <div
+                    onClick={() => setIsZoomOpen(true)}
+                    className="relative aspect-video rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900 flex items-center justify-center cursor-pointer group"
+                    title="Clic para ampliar en pantalla completa"
                   >
-                    <Send className="h-3.5 w-3.5" />
-                  </Button>
-                </form>
+                    <img
+                      src={normalizedUrl}
+                      alt="Arte Preview"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = 'none';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-xs text-white font-semibold">
+                      <Maximize2 className="h-4 w-4" />
+                      <span>Ampliar</span>
+                    </div>
+                  </div>
+                ) : isCanvaOrFigma ? (
+                  <div className="aspect-video rounded-lg border border-purple-500/30 bg-purple-950/20 flex flex-col items-center justify-center text-center p-4 gap-2">
+                    <FileText className="h-8 w-8 text-purple-400" />
+                    <div>
+                      <p className="text-xs font-bold text-white">Diseño en {mediaUrls.includes('canva') ? 'Canva' : 'Figma'}</p>
+                      <p className="text-[10px] text-zinc-400">Enlace interactivo configurado</p>
+                    </div>
+                    <a
+                      href={mediaUrls}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1 rounded bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold flex items-center gap-1 mt-1"
+                    >
+                      <span>Abrir Archivo</span>
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+                ) : (
+                  <div className="aspect-video rounded-lg border border-dashed border-zinc-800 bg-zinc-900/40 flex flex-col items-center justify-center text-zinc-500 p-4 text-center">
+                    <ImageIcon className="h-8 w-8 text-zinc-600 mb-1" />
+                    <p className="text-xs">Sin imagen o video adjunto</p>
+                    <p className="text-[10px] text-zinc-600">Sube un archivo o pega un enlace</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Client Feedback Banner if present */}
+              {clientFeedback && (
+                <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-3 space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-rose-400">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>Observación del Cliente:</span>
+                  </div>
+                  <p className="text-xs text-zinc-300 italic pl-5">
+                    "{clientFeedback}"
+                  </p>
+                </div>
               )}
+
+              {/* Comments / Revision Thread */}
+              <div className="flex-1 flex flex-col min-h-[220px] bg-zinc-950/60 rounded-xl border border-zinc-800 p-3">
+                <div className="flex items-center gap-2 text-xs font-semibold text-zinc-300 pb-2 border-b border-zinc-800">
+                  <MessageSquare className="h-3.5 w-3.5 text-purple-400" />
+                  <span>Hilo de Comentarios y Ajustes</span>
+                  <span className="ml-auto text-[10px] text-zinc-500">
+                    {comments.length}
+                  </span>
+                </div>
+
+                <div className="flex-1 overflow-y-auto py-2 space-y-2 max-h-[200px] text-xs">
+                  {comments.length === 0 ? (
+                    <p className="text-center text-zinc-500 py-6 text-xs">
+                      No hay comentarios en esta publicación aún.
+                    </p>
+                  ) : (
+                    comments.map((comm) => {
+                      const isClient = comm.authorRole === 'CLIENT';
+                      return (
+                        <div
+                          key={comm.id}
+                          className={`p-2.5 rounded-xl border ${
+                            isClient
+                              ? 'bg-amber-500/10 border-amber-500/20 ml-3'
+                              : 'bg-zinc-900 border-zinc-800 mr-3'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className={`font-semibold text-[11px] ${isClient ? 'text-amber-400' : 'text-purple-300'}`}>
+                              {comm.authorName}
+                            </span>
+                            <span className="text-[9px] text-zinc-500">
+                              {new Date(comm.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <p className="text-zinc-300 leading-snug">{comm.text}</p>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* Add Comment Form */}
+                {post?.id && (
+                  <form onSubmit={handleAddComment} className="pt-2 border-t border-zinc-800 flex gap-2">
+                    <input
+                      type="text"
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      placeholder="Escribir mensaje para el cliente..."
+                      className="flex-1 bg-zinc-900 border border-zinc-700/80 rounded-lg px-2.5 py-1.5 text-xs text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-purple-500"
+                    />
+                    <Button
+                      type="submit"
+                      size="sm"
+                      variant="default"
+                      disabled={loadingComment || !newComment.trim()}
+                      className="px-3 text-xs"
+                    >
+                      <Send className="h-3.5 w-3.5" />
+                    </Button>
+                  </form>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Modal Footer: Action Bar */}
-        <div className="px-6 py-4 border-t border-zinc-800 bg-zinc-900/70 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            {post?.id && (
+          {/* Modal Footer: Action Bar */}
+          <div className="px-6 py-4 border-t border-zinc-800 bg-zinc-900/70 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              {post?.id && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleDelete}
+                  disabled={deleting || saving}
+                  className="gap-1.5 text-xs"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span>Eliminar</span>
+                </Button>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 ml-auto">
               <Button
                 type="button"
-                variant="destructive"
+                variant="outline"
                 size="sm"
-                onClick={handleDelete}
-                disabled={deleting || saving}
-                className="gap-1.5 text-xs"
+                onClick={onClose}
+                className="text-xs"
               >
-                <Trash2 className="h-3.5 w-3.5" />
-                <span>Eliminar</span>
+                Cancelar
               </Button>
-            )}
-          </div>
 
-          <div className="flex flex-wrap items-center gap-2 ml-auto">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onClose}
-              className="text-xs"
-            >
-              Cancelar
-            </Button>
+              {/* Quick Status Action Buttons */}
+              {status !== 'PENDIENTE_APROBACION' && status !== 'APROBADO' && (
+                <Button
+                  type="button"
+                  variant="warning"
+                  size="sm"
+                  onClick={() => handleSave('PENDIENTE_APROBACION')}
+                  disabled={saving}
+                  className="text-xs gap-1.5"
+                >
+                  <Send className="h-3.5 w-3.5" />
+                  <span>Enviar a Revisión Cliente</span>
+                </Button>
+              )}
 
-            {/* Quick Status Action Buttons */}
-            {status !== 'PENDIENTE_APROBACION' && status !== 'APROBADO' && (
-              <Button
-                type="button"
-                variant="warning"
-                size="sm"
-                onClick={() => handleSave('PENDIENTE_APROBACION')}
-                disabled={saving}
-                className="text-xs gap-1.5"
-              >
-                <Send className="h-3.5 w-3.5" />
-                <span>Enviar a Revisión Cliente</span>
-              </Button>
-            )}
+              {status !== 'APROBADO' && (
+                <Button
+                  type="button"
+                  variant="emerald"
+                  size="sm"
+                  onClick={() => handleSave('APROBADO')}
+                  disabled={saving}
+                  className="text-xs gap-1.5"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  <span>Marcar Aprobado</span>
+                </Button>
+              )}
 
-            {status !== 'APROBADO' && (
-              <Button
-                type="button"
-                variant="emerald"
-                size="sm"
-                onClick={() => handleSave('APROBADO')}
-                disabled={saving}
-                className="text-xs gap-1.5"
-              >
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                <span>Marcar Aprobado</span>
-              </Button>
-            )}
+              {status === 'APROBADO' && (
+                <Button
+                  type="button"
+                  variant="default"
+                  size="sm"
+                  onClick={() => handleSave('PUBLICADO')}
+                  disabled={saving}
+                  className="text-xs gap-1.5"
+                >
+                  <Share2 className="h-3.5 w-3.5" />
+                  <span>Marcar Publicado</span>
+                </Button>
+              )}
 
-            {status === 'APROBADO' && (
               <Button
                 type="button"
                 variant="default"
                 size="sm"
-                onClick={() => handleSave('PUBLICADO')}
+                onClick={() => handleSave()}
                 disabled={saving}
-                className="text-xs gap-1.5"
+                className="text-xs"
               >
-                <Share2 className="h-3.5 w-3.5" />
-                <span>Marcar Publicado</span>
+                {saving ? 'Guardando...' : 'Guardar Cambios'}
               </Button>
-            )}
-
-            <Button
-              type="button"
-              variant="default"
-              size="sm"
-              onClick={() => handleSave()}
-              disabled={saving}
-              className="text-xs"
-            >
-              {saving ? 'Guardando...' : 'Guardar Cambios'}
-            </Button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Lightbox / Zoom Modal */}
+      {isZoomOpen && normalizedUrl && (
+        <div
+          onClick={() => setIsZoomOpen(false)}
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer animate-in fade-in"
+        >
+          <div className="relative max-w-5xl max-h-[90vh] overflow-hidden rounded-2xl border border-zinc-800">
+            <img
+              src={normalizedUrl}
+              alt="Arte Completo"
+              className="max-w-full max-h-[85vh] object-contain rounded-xl"
+            />
+            <button
+              onClick={() => setIsZoomOpen(false)}
+              className="absolute top-3 right-3 p-2 rounded-full bg-black/60 text-white hover:bg-black transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

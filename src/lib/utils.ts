@@ -61,8 +61,36 @@ export const PLATFORM_INFO: Record<string, { label: string; color: string; bg: s
   FACEBOOK: { label: "Facebook", color: "#1877F2", bg: "bg-blue-500/10 text-blue-400 border-blue-500/20", icon: "facebook" },
   TIKTOK: { label: "TikTok", color: "#00F2FE", bg: "bg-teal-500/10 text-teal-400 border-teal-500/20", icon: "video" },
   LINKEDIN: { label: "LinkedIn", color: "#0A66C2", bg: "bg-sky-500/10 text-sky-400 border-sky-500/20", icon: "linkedin" },
-  YOUTUBE: { label: "YouTube", color: "#FF0000", bg: "bg-red-500/10 text-red-400 border-red-500/20", icon: "youtube" },
+  YOUTUBE: { label: "YouTube", color: "#FF0000", bg: "bg-red-500/10 text-red-400 border-red-600/20", icon: "youtube" },
   PINTEREST: { label: "Pinterest", color: "#BD081C", bg: "bg-red-600/10 text-red-400 border-red-600/20", icon: "pin" },
   THREADS: { label: "Threads", color: "#000000", bg: "bg-zinc-500/10 text-zinc-300 border-zinc-500/20", icon: "at-sign" },
   X: { label: "X / Twitter", color: "#1DA1F2", bg: "bg-slate-500/10 text-slate-300 border-slate-500/20", icon: "twitter" }
 };
+
+export function normalizeMediaUrl(url: string | null | undefined): string {
+  if (!url || typeof url !== 'string') return '';
+  const trimmed = url.trim();
+
+  // If already base64 data url
+  if (trimmed.startsWith('data:image/')) return trimmed;
+
+  // Google Drive Link Converter (e.g. drive.google.com/file/d/ID/view or open?id=ID)
+  const driveFileMatch = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (driveFileMatch && driveFileMatch[1]) {
+    return `https://lh3.googleusercontent.com/d/${driveFileMatch[1]}`;
+  }
+  const driveIdMatch = trimmed.match(/id=([a-zA-Z0-9_-]+)/);
+  if (trimmed.includes('drive.google.com') && driveIdMatch && driveIdMatch[1]) {
+    return `https://lh3.googleusercontent.com/d/${driveIdMatch[1]}`;
+  }
+
+  // Dropbox link converter (replace dl=0 with raw=1)
+  if (trimmed.includes('dropbox.com')) {
+    if (trimmed.includes('?dl=0')) return trimmed.replace('?dl=0', '?raw=1');
+    if (trimmed.includes('&dl=0')) return trimmed.replace('&dl=0', '&raw=1');
+    if (!trimmed.includes('raw=1')) return `${trimmed}${trimmed.includes('?') ? '&' : '?'}raw=1`;
+  }
+
+  return trimmed;
+}
+

@@ -17,12 +17,17 @@ import {
   ThumbsUp,
   RefreshCw,
   Info,
-  Check
+  Check,
+  Maximize2,
+  X,
+  ExternalLink,
+  FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { ContentPost, STATUS_CONFIG } from '@/components/parrilla/types';
+import { normalizeMediaUrl } from '@/lib/utils';
 
 const FORMAT_ICONS: Record<string, any> = {
   REEL: Film,
@@ -42,6 +47,7 @@ export default function ClientPortalParrillaPage() {
   const [activeFeedbackId, setActiveFeedbackId] = useState<string | null>(null);
   const [feedbackText, setFeedbackText] = useState('');
   const [submittingAction, setSubmittingAction] = useState<string | null>(null);
+  const [activeZoomUrl, setActiveZoomUrl] = useState<string | null>(null);
 
   // New comment input per post
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
@@ -330,16 +336,52 @@ export default function ClientPortalParrillaPage() {
 
                 {/* Media Preview if available */}
                 {post.mediaUrls && (
-                  <div className="relative aspect-video bg-zinc-950 border-b border-zinc-800 overflow-hidden flex items-center justify-center">
-                    <img
-                      src={post.mediaUrls}
-                      alt={post.title}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = 'none';
-                      }}
-                    />
-                  </div>
+                  (() => {
+                    const norm = normalizeMediaUrl(post.mediaUrls);
+                    const isCanvaFigma = post.mediaUrls.includes('canva.com') || post.mediaUrls.includes('figma.com');
+
+                    if (isCanvaFigma) {
+                      return (
+                        <div className="aspect-video bg-gradient-to-br from-purple-950/40 to-zinc-950 border-b border-zinc-800 p-6 flex flex-col items-center justify-center text-center gap-2">
+                          <FileText className="h-10 w-10 text-purple-400" />
+                          <div>
+                            <p className="text-sm font-bold text-white">Diseño Interactivo en {post.mediaUrls.includes('canva') ? 'Canva' : 'Figma'}</p>
+                            <p className="text-xs text-zinc-400">Arte editable preparado para revisión</p>
+                          </div>
+                          <a
+                            href={post.mediaUrls}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-md shadow-purple-600/20 mt-1"
+                          >
+                            <span>Abrir Arte en {post.mediaUrls.includes('canva') ? 'Canva' : 'Figma'}</span>
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </a>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div
+                        onClick={() => setActiveZoomUrl(norm)}
+                        className="relative aspect-video bg-zinc-950 border-b border-zinc-800 overflow-hidden flex items-center justify-center cursor-pointer group"
+                        title="Clic para ampliar arte en pantalla completa"
+                      >
+                        <img
+                          src={norm}
+                          alt={post.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = 'none';
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-xs text-white font-semibold">
+                          <Maximize2 className="h-4 w-4" />
+                          <span>Ver Arte en Pantalla Completa</span>
+                        </div>
+                      </div>
+                    );
+                  })()
                 )}
 
                 {/* Body Content */}
@@ -517,6 +559,27 @@ export default function ClientPortalParrillaPage() {
               </div>
             );
           })}
+        </div>
+      )}
+      {/* Lightbox Modal for Full Screen Art Review */}
+      {activeZoomUrl && (
+        <div
+          onClick={() => setActiveZoomUrl(null)}
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer animate-in fade-in"
+        >
+          <div className="relative max-w-5xl max-h-[90vh] overflow-hidden rounded-2xl border border-zinc-800">
+            <img
+              src={activeZoomUrl}
+              alt="Arte en Pantalla Completa"
+              className="max-w-full max-h-[85vh] object-contain rounded-xl"
+            />
+            <button
+              onClick={() => setActiveZoomUrl(null)}
+              className="absolute top-3 right-3 p-2 rounded-full bg-black/60 text-white hover:bg-black transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
       )}
     </div>

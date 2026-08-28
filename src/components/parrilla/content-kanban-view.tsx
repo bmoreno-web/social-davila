@@ -19,6 +19,7 @@ import {
 import { ContentPost, ContentPostStatus, STATUS_CONFIG } from './types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { normalizeMediaUrl } from '@/lib/utils';
 
 interface ContentKanbanViewProps {
   posts: ContentPost[];
@@ -140,7 +141,7 @@ export function ContentKanbanView({
                       {post.mediaUrls && (
                         <div className="relative aspect-video rounded-lg overflow-hidden border border-zinc-800 bg-zinc-950">
                           <img
-                            src={post.mediaUrls}
+                            src={normalizeMediaUrl(post.mediaUrls)}
                             alt="Preview"
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             onError={(e) => {
