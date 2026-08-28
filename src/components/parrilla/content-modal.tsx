@@ -94,6 +94,7 @@ export function ContentModal({
   const [loadingComment, setLoadingComment] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [uploadingDrive, setUploadingDrive] = useState(false);
 
   useEffect(() => {
     if (post) {
@@ -147,8 +148,6 @@ export function ContentModal({
       setSelectedPlatforms([...selectedPlatforms, pId]);
     }
   };
-
-  const [uploadingDrive, setUploadingDrive] = useState(false);
 
   // Handle file upload (Uploads directly to agency's Google Drive or local fallback)
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
