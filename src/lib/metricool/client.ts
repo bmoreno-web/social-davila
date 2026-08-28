@@ -276,11 +276,26 @@ export class MetricoolService {
       postDate = new Date(Date.now() + 5 * 60 * 1000);
     }
 
-    const year = postDate.getFullYear();
-    const month = String(postDate.getMonth() + 1).padStart(2, '0');
-    const day = String(postDate.getDate()).padStart(2, '0');
-    const hours = String(postDate.getHours()).padStart(2, '0');
-    const minutes = String(postDate.getMinutes()).padStart(2, '0');
+    // Format strictly in America/Bogota (UTC-5) regardless of Vercel server timezone
+    const bogotaFormatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Bogota',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+
+    const parts = bogotaFormatter.formatToParts(postDate);
+    const getPart = (type: string) => parts.find((p) => p.type === type)?.value || '00';
+    const year = getPart('year');
+    const month = getPart('month');
+    const day = getPart('day');
+    let hours = getPart('hour');
+    if (hours === '24') hours = '00';
+    const minutes = getPart('minute');
     const seconds = '00';
     const formattedDateTime = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
 
