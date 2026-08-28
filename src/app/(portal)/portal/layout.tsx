@@ -58,6 +58,35 @@ export default async function PortalLayout({
         </div>
       </header>
 
+      {/* Portal Sub-Nav */}
+      <div className="bg-zinc-950/60 border-b border-zinc-800/60 px-6 md:px-10 py-2.5 print:hidden">
+        <div className="max-w-6xl mx-auto flex items-center gap-3 text-xs">
+          <Link
+            href="/portal"
+            className="px-3.5 py-1.5 rounded-lg font-medium text-zinc-300 hover:text-white hover:bg-zinc-900 transition-colors flex items-center gap-2"
+          >
+            <BarChart3 className="h-3.5 w-3.5 text-purple-400" />
+            <span>Métricas & Rendimiento</span>
+          </Link>
+
+          <Link
+            href="/portal/parrilla"
+            className="px-3.5 py-1.5 rounded-lg font-medium text-amber-300 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 transition-colors flex items-center gap-2"
+          >
+            <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+            <span>Aprobación de Contenidos</span>
+          </Link>
+
+          <Link
+            href="/portal/reportes"
+            className="px-3.5 py-1.5 rounded-lg font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 transition-colors hidden sm:flex items-center gap-2"
+          >
+            <ShieldCheck className="h-3.5 w-3.5 text-zinc-400" />
+            <span>Histórico de Informes</span>
+          </Link>
+        </div>
+      </div>
+
       {/* Main Content */}
       <main className="flex-1 p-6 md:p-10 max-w-6xl w-full mx-auto print:p-0 print:m-0 print:max-w-none print:w-full">
         {children}

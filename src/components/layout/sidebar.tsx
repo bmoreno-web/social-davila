@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Users,
   Share2,
+  CalendarDays,
   FileText,
   GitCompare,
   History,
@@ -38,6 +39,7 @@ export function Sidebar({ user }: SidebarProps) {
   const navItems = [
     { label: 'Dashboard', href: '/', icon: LayoutDashboard },
     { label: 'Clientes', href: '/clientes', icon: Users },
+    { label: 'Parrilla de Contenido', href: '/parrilla', icon: CalendarDays },
     { label: 'Redes Sociales', href: '/redes', icon: Share2 },
     { label: 'Reportes', href: '/reportes', icon: FileText },
     { label: 'Comparador', href: '/reportes/comparar', icon: GitCompare },

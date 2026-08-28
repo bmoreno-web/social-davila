@@ -402,6 +402,13 @@ export default function ClientPortalHomePage() {
               </div>
             )}
 
+            <Link href="/portal/parrilla">
+              <Button variant="glass" className="border-amber-500/30 text-amber-300 hover:bg-amber-500/10 text-xs gap-1.5 py-2">
+                <Sparkles className="h-4 w-4 text-amber-400" />
+                <span>Aprobar Contenidos</span>
+              </Button>
+            </Link>
+
             {latestReport && (
               <Link href={`/portal/reportes/${latestReport.id}`}>
                 <Button className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs gap-2 shadow-lg shadow-purple-600/30 font-semibold py-2">

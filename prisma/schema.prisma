@@ -45,6 +45,7 @@ model Client {
   reports           Report[]
   recommendations   Recommendation[]
   posts             ReportPost[]
+  contentPosts      ContentPost[]
   syncLogs          SyncLog[]
 }
 
@@ -167,3 +168,37 @@ model SystemSetting {
   value     String
   updatedAt DateTime @updatedAt
 }
+
+model ContentPost {
+  id              String           @id @default(cuid())
+  clientId        String
+  client          Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  title           String
+  copy            String
+  scheduledDate   DateTime
+  platforms       String           // Comma-separated: "INSTAGRAM,FACEBOOK,TIKTOK", etc.
+  contentType     String           @default("IMAGE") // REEL, CAROUSEL, IMAGE, STORY, TIKTOK, VIDEO, ARTICLE
+  mediaUrls       String?          // JSON array or comma-separated URLs
+  status          String           @default("BORRADOR") // BORRADOR, PENDIENTE_APROBACION, CAMBIOS_SOLICITADOS, APROBADO, PUBLICADO
+  clientFeedback  String?          // Last feedback notes from client
+  approvedAt      DateTime?
+  approvedBy      String?          // Name or email of client who approved
+  createdById     String?
+  tags            String?          // Optional tags / campaign name
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  comments        ContentComment[]
+}
+
+model ContentComment {
+  id            String      @id @default(cuid())
+  contentPostId String
+  contentPost   ContentPost @relation(fields: [contentPostId], references: [id], onDelete: Cascade)
+  authorName    String
+  authorRole    String      @default("AGENCY") // AGENCY, CLIENT
+  authorAvatar  String?
+  text          String
+  createdAt     DateTime    @default(now())
+}
+

@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "default" | "secondary" | "outline" | "ghost" | "destructive" | "gold" | "glass";
+  variant?: "default" | "secondary" | "outline" | "ghost" | "destructive" | "gold" | "glass" | "emerald" | "warning";
   size?: "sm" | "md" | "lg" | "icon";
   isLoading?: boolean;
 }
@@ -18,6 +18,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       outline: "border border-zinc-700/80 hover:border-zinc-500 hover:bg-zinc-800/50 text-zinc-200",
       ghost: "hover:bg-zinc-800/60 text-zinc-300 hover:text-white",
       destructive: "bg-red-600 hover:bg-red-700 text-white",
+      emerald: "bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-600/20",
+      warning: "bg-amber-600 hover:bg-amber-700 text-white shadow-sm shadow-amber-600/20",
       gold: "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-semibold shadow-md shadow-amber-500/20",
       glass: "bg-white/5 hover:bg-white/10 text-zinc-200 border border-white/10 backdrop-blur-md"
     };

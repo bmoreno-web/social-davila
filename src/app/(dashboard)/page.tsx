@@ -126,6 +126,11 @@ export default async function DashboardPrincipalPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <Link href="/parrilla">
+            <Button variant="outline" className="border-purple-500/30 text-purple-300 hover:bg-purple-500/10 gap-2">
+              <Calendar className="h-4 w-4" /> Parrilla & Aprobaciones
+            </Button>
+          </Link>
           <Link href="/reportes/nuevo">
             <Button className="bg-purple-600 hover:bg-purple-700 text-white gap-2 shadow-lg shadow-purple-600/20">
               <Plus className="h-4 w-4" /> Crear Reporte

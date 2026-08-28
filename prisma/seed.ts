@@ -9,6 +9,8 @@ async function main() {
   // 1. Clear existing data if any
   await prisma.auditLog.deleteMany();
   await prisma.syncLog.deleteMany();
+  await prisma.contentComment.deleteMany();
+  await prisma.contentPost.deleteMany();
   await prisma.recommendation.deleteMany();
   await prisma.reportMetric.deleteMany();
   await prisma.reportPost.deleteMany();
@@ -359,7 +361,87 @@ Durante el período evaluado, la presencia digital de **Acesco Colombia** experi
     }
   });
 
-  // 7. Initial Audit Log
+  // 7. Seed Planned Content Posts & Client Approvals
+  const post1 = await prisma.contentPost.create({
+    data: {
+      clientId: acescoClient.id,
+      title: 'Reel: 3 Errores al instalar Cubiertas de Techo',
+      copy: '¿Sabías que el 80% de las filtraciones se deben a un mal traslape? ⚠️🔨 En este Reel te mostramos cómo asegurar tus fijaciones paso a paso con láminas Acesco.\n\nGuarda este video para tu próxima obra y déjanos tu consulta en comentarios. 👇\n\n#Acesco #ConstruccionSegura #Cubiertas #IngenieriaCivil #Arquitectura',
+      scheduledDate: new Date('2026-08-29T16:00:00Z'),
+      platforms: 'INSTAGRAM,TIKTOK,FACEBOOK',
+      contentType: 'REEL',
+      mediaUrls: 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?w=800&auto=format&fit=crop&q=80',
+      status: 'PENDIENTE_APROBACION',
+      tags: 'Educativo, Producto Estrella',
+      comments: {
+        create: [
+          {
+            authorName: 'Camila (Redes Davila)',
+            authorRole: 'AGENCY',
+            text: 'Hola equipo Acesco! Ya tenemos listo el render y la edición del Reel de cubiertas. Por favor revisar el copy y la duración.',
+            createdAt: new Date('2026-08-27T14:30:00Z')
+          }
+        ]
+      }
+    }
+  });
+
+  const post2 = await prisma.contentPost.create({
+    data: {
+      clientId: acescoClient.id,
+      title: 'Carrusel: Comparativa Galvalume vs Galvanizado Tradicional',
+      copy: '¿Por qué elegir Galvalume para climas costeros? 🌊\nDesliza para ver la prueba de niebla salina y cómo triplica la vida útil de tus proyectos.\n\n1️⃣ Mayor resistencia a la corrosión\n2️⃣ Reflejo térmico superior\n3️⃣ Garantía certificada Acesco\n\nCotiza con tu asesor más cercano en el link de la bio 🔗\n\n#AcescoColombia #Galvalume #CalidadGarantizada #Construccion',
+      scheduledDate: new Date('2026-08-31T14:00:00Z'),
+      platforms: 'INSTAGRAM,LINKEDIN,FACEBOOK',
+      contentType: 'CAROUSEL',
+      mediaUrls: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&auto=format&fit=crop&q=80',
+      status: 'CAMBIOS_SOLICITADOS',
+      clientFeedback: 'Por favor corregir en la lámina 3 el porcentaje de reflectancia térmica al 75% antes de publicar.',
+      tags: 'B2B, Especificadores',
+      comments: {
+        create: [
+          {
+            authorName: 'Carlos Mendoza (Acesco)',
+            authorRole: 'CLIENT',
+            text: 'Excelente diseño, pero en la diapositiva 3 ajustemos el dato técnico al 75% según la nueva ficha de ingeniería.',
+            createdAt: new Date('2026-08-28T09:15:00Z')
+          }
+        ]
+      }
+    }
+  });
+
+  const post3 = await prisma.contentPost.create({
+    data: {
+      clientId: acescoClient.id,
+      title: 'Caso de Éxito: Mega Puente Estructura Metálica',
+      copy: 'Orgullo de la ingeniería nacional 🇨🇴. Más de 1.200 toneladas de acero estructural Acesco dieron vida a este hito de infraestructura.\n\nConoce los detalles de la obra en nuestro nuevo artículo de blog.\n\n#OrgulloAcesco #InfraestructuraColombia #Ingenieria',
+      scheduledDate: new Date('2026-09-02T15:30:00Z'),
+      platforms: 'LINKEDIN,FACEBOOK',
+      contentType: 'IMAGE',
+      mediaUrls: 'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=800&auto=format&fit=crop&q=80',
+      status: 'APROBADO',
+      approvedAt: new Date('2026-08-28T08:00:00Z'),
+      approvedBy: 'Carlos Mendoza',
+      tags: 'Institucional, Caso de Exito'
+    }
+  });
+
+  const post4 = await prisma.contentPost.create({
+    data: {
+      clientId: acescoClient.id,
+      title: 'Story Interactiva: Trivia de Resistencia Sísmica',
+      copy: 'Trivia de viernes: ¿Qué norma rige el diseño de perfiles de acero en Colombia? (NSR-10 vs ASTM). Responde en el sticker 📲',
+      scheduledDate: new Date('2026-09-04T17:00:00Z'),
+      platforms: 'INSTAGRAM',
+      contentType: 'STORY',
+      mediaUrls: 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=800&auto=format&fit=crop&q=80',
+      status: 'BORRADOR',
+      tags: 'Engagement, Historias'
+    }
+  });
+
+  // 8. Initial Audit Log
   await prisma.auditLog.create({
     data: {
       userId: adminUser.id,
@@ -367,7 +449,7 @@ Durante el período evaluado, la presencia digital de **Acesco Colombia** experi
       userEmail: adminUser.email,
       action: 'INITIALIZE',
       resourceType: 'SYSTEM',
-      details: 'Inicialización de base de datos y sincronización de 7 marcas Metricool para Davila PM Social.'
+      details: 'Inicialización de base de datos, sincronización Metricool y parrilla de contenidos Davila PM.'
     }
   });
 
