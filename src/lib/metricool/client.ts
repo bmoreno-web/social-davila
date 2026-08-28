@@ -346,7 +346,7 @@ export class MetricoolService {
 
     if (validMedia.length > 0) {
       payload.media = validMedia;
-      payload.saveExternalMediaFiles = false;
+      payload.saveExternalMediaFiles = true;
     }
 
     if (isVideo || validNetworks.includes('instagram')) {
