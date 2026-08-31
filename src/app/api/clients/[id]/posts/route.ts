@@ -11,50 +11,75 @@ interface BrandConfig {
   networks: ('instagram' | 'facebook' | 'tiktok' | 'linkedin')[];
 }
 
-const BRAND_CONFIGS: Record<string, BrandConfig> = {
-  // Acesco
-  'cmtag1oha0000t0g80a05ym3q': { blogId: '2930665', userId: '1395490', name: 'Acesco Colombia', networks: ['instagram', 'facebook'] },
-  'acesco-colombia': { blogId: '2930665', userId: '1395490', name: 'Acesco Colombia', networks: ['instagram', 'facebook'] },
-  'client-acesco': { blogId: '2930665', userId: '1395490', name: 'Acesco Colombia', networks: ['instagram', 'facebook'] },
-
-  // Dávila P&M
-  'cmtag1on80003t0g8l4a3cliz': { blogId: '4056236', userId: '1395490', name: 'Dávila P&M', networks: ['instagram'] },
-  'davila-pm': { blogId: '4056236', userId: '1395490', name: 'Dávila P&M', networks: ['instagram'] },
-  'client-davila': { blogId: '4056236', userId: '1395490', name: 'Dávila P&M', networks: ['instagram'] },
-
-  // Hospital Serena del Mar
-  'cmtag1ow70008t0g8f2fgh1yd': { blogId: '3996019', userId: '1395490', name: 'Hospital Serena del Mar', networks: ['facebook'] },
-  'hospital-serena-del-mar': { blogId: '3996019', userId: '1395490', name: 'Hospital Serena del Mar', networks: ['facebook'] },
-  'client-serena': { blogId: '3996019', userId: '1395490', name: 'Hospital Serena del Mar', networks: ['facebook'] },
-
-  // Zona Franca Barranquilla
-  'cmtag1oyx000at0g8h2fuyif8': { blogId: '4058165', userId: '1395490', name: 'Zona Franca B/quilla', networks: ['instagram', 'facebook'] },
-  'zona-franca-barranquilla': { blogId: '4058165', userId: '1395490', name: 'Zona Franca B/quilla', networks: ['instagram', 'facebook'] },
-  'client-zfbaq': { blogId: '4058165', userId: '1395490', name: 'Zona Franca B/quilla', networks: ['instagram', 'facebook'] },
-
-  // Eduardo Verano
-  'cmtag1p0z000ct0g8w9h3k2lm': { blogId: '4058776', userId: '1395490', name: 'Eduardo Verano De la Rosa', networks: ['tiktok'] },
-  'eduardo-verano': { blogId: '4058776', userId: '1395490', name: 'Eduardo Verano De la Rosa', networks: ['tiktok'] },
-
-  // Charles Chapman
-  'cmtag1p4a000et0g8gbyk9m1m': { blogId: '4588040', userId: '1395490', name: 'Charles Chapman', networks: ['linkedin'] },
-  'charles-chapman': { blogId: '4588040', userId: '1395490', name: 'Charles Chapman', networks: ['linkedin'] },
-
-  // OG Realty Partners
-  'cmtag1p7q000gt0g8k86l2mfr': { blogId: '4559324', userId: '1395490', name: 'OG Realty Partners', networks: ['instagram'] },
-  'og-realty-partners': { blogId: '4559324', userId: '1395490', name: 'OG Realty Partners', networks: ['instagram'] }
+const KNOWN_BRAND_CONFIGS: Record<string, { blogId: string; userId: string; name: string; networks: ('instagram' | 'facebook' | 'tiktok' | 'linkedin')[] }> = {
+  acesco: { blogId: '2930665', userId: '1395490', name: 'Acesco Colombia', networks: ['instagram', 'facebook'] },
+  davila: { blogId: '4056236', userId: '1395490', name: 'Dávila P&M', networks: ['instagram', 'facebook'] },
+  serena: { blogId: '3996019', userId: '1395490', name: 'Hospital Serena del Mar', networks: ['facebook'] },
+  zona: { blogId: '4058165', userId: '1395490', name: 'Zona Franca B/quilla', networks: ['instagram', 'facebook', 'linkedin'] },
+  zfbaq: { blogId: '4058165', userId: '1395490', name: 'Zona Franca B/quilla', networks: ['instagram', 'facebook', 'linkedin'] },
+  verano: { blogId: '4058776', userId: '1395490', name: 'Eduardo Verano De la Rosa', networks: ['tiktok'] },
+  chapman: { blogId: '4588040', userId: '1395490', name: 'Charles Chapman', networks: ['linkedin'] },
+  realty: { blogId: '4559324', userId: '1395490', name: 'OG Realty Partners', networks: ['instagram'] },
+  og: { blogId: '4559324', userId: '1395490', name: 'OG Realty Partners', networks: ['instagram'] }
 };
 
-function resolveBrandConfig(id: string): BrandConfig {
-  if (BRAND_CONFIGS[id]) return BRAND_CONFIGS[id];
+async function resolveBrandData(id: string) {
+  let dbClient: any = null;
+  try {
+    dbClient = await prisma.client.findFirst({
+      where: {
+        OR: [
+          { id },
+          { slug: id },
+          { metricoolBlogId: id }
+        ]
+      },
+      include: {
+        socialConnections: true
+      }
+    });
+  } catch (e) {
+    console.warn('Prisma client lookup error in posts API:', e);
+  }
+
+  if (dbClient) {
+    const rawNetworks = dbClient.socialConnections && dbClient.socialConnections.length > 0
+      ? dbClient.socialConnections.map((s: any) => s.platform.toLowerCase())
+      : ['instagram', 'facebook'];
+
+    return {
+      clientId: dbClient.id,
+      name: dbClient.name,
+      blogId: dbClient.metricoolBlogId || '',
+      userId: dbClient.metricoolUserId || '1395490',
+      networks: rawNetworks as ('instagram' | 'facebook' | 'tiktok' | 'linkedin')[],
+      dbClient
+    };
+  }
+
+  // Fallback matching by key/keyword
   const lower = id.toLowerCase();
-  if (lower.includes('davila')) return BRAND_CONFIGS['cmtag1on80003t0g8l4a3cliz'];
-  if (lower.includes('serena')) return BRAND_CONFIGS['cmtag1ow70008t0g8f2fgh1yd'];
-  if (lower.includes('zona') || lower.includes('zfbaq')) return BRAND_CONFIGS['cmtag1oyx000at0g8h2fuyif8'];
-  if (lower.includes('verano')) return BRAND_CONFIGS['cmtag1p0z000ct0g8w9h3k2lm'];
-  if (lower.includes('chapman')) return BRAND_CONFIGS['cmtag1p4a000et0g8gbyk9m1m'];
-  if (lower.includes('og') || lower.includes('realty')) return BRAND_CONFIGS['cmtag1p7q000gt0g8k86l2mfr'];
-  return BRAND_CONFIGS['cmtag1oha0000t0g80a05ym3q'];
+  for (const [key, cfg] of Object.entries(KNOWN_BRAND_CONFIGS)) {
+    if (lower === key || lower.includes(key) || cfg.name.toLowerCase().includes(lower)) {
+      return {
+        clientId: id,
+        name: cfg.name,
+        blogId: cfg.blogId,
+        userId: cfg.userId,
+        networks: cfg.networks,
+        dbClient: null
+      };
+    }
+  }
+
+  return {
+    clientId: id,
+    name: 'Acesco Colombia',
+    blogId: '2930665',
+    userId: '1395490',
+    networks: ['instagram', 'facebook'] as ('instagram' | 'facebook')[],
+    dbClient: null
+  };
 }
 
 export async function GET(
@@ -77,7 +102,7 @@ export async function GET(
     const fromDate = fromParam || new Date(now.getTime() - 90 * 86400000).toISOString().split('T')[0];
     const toDate = toParam || now.toISOString().split('T')[0];
 
-    const brand = resolveBrandConfig(id);
+    const brand = await resolveBrandData(id);
     let posts: any[] = [];
 
     // 1. Query Metricool API live for this specific brand and its networks
@@ -118,7 +143,7 @@ export async function GET(
               thumbnailUrl: proxiedImg,
               rawMediaUrl: rawImg,
               permalink: p.permalink,
-              clientId: id
+              clientId: brand.clientId
             };
           });
         }
@@ -130,7 +155,7 @@ export async function GET(
     // 2. If Metricool has 0 posts in this timeframe, fallback to DB if available
     if (!posts || posts.length === 0) {
       try {
-        const whereClause: any = { clientId: id };
+        const whereClause: any = { clientId: brand.clientId };
         if (platform && platform !== 'ALL') {
           whereClause.platform = platform.toUpperCase();
         }
@@ -149,8 +174,8 @@ export async function GET(
 
       posts = samplePosts.map((p, idx) => ({
         ...p,
-        id: `post-${id}-${idx + 1}`,
-        clientId: id,
+        id: `post-${brand.clientId}-${idx + 1}`,
+        clientId: brand.clientId,
         publishedAt: p.publishedAt
       }));
     }
@@ -168,7 +193,7 @@ export async function GET(
     return NextResponse.json({ posts: posts.slice(0, limit) });
   } catch (error: any) {
     console.error('Posts fetch error fallback:', error);
-    const samplePosts = getMockPostsForBrand('Acesco Colombia', 'INSTAGRAM');
+    const samplePosts = getMockPostsForBrand('Dávila P&M', 'INSTAGRAM');
     return NextResponse.json({
       posts: samplePosts.map((p, idx) => ({ ...p, id: `post-${idx + 1}` }))
     });

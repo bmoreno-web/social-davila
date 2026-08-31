@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Calendar,
   CheckCircle2,
@@ -21,7 +22,8 @@ import {
   Maximize2,
   X,
   ExternalLink,
-  FileText
+  FileText,
+  Building2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -39,10 +41,14 @@ const FORMAT_ICONS: Record<string, any> = {
   TIKTOK: Share2
 };
 
-export default function ClientPortalParrillaPage() {
+function ClientPortalParrillaContent() {
+  const searchParams = useSearchParams();
+  const targetPostId = searchParams.get('postId');
+
   const [posts, setPosts] = useState<ContentPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<'PENDIENTE' | 'TODAS' | 'APROBADAS'>('PENDIENTE');
+  const [highlightedPostId, setHighlightedPostId] = useState<string | null>(null);
 
   // Modals & Feedback state
   const [activeFeedbackId, setActiveFeedbackId] = useState<string | null>(null);
@@ -53,10 +59,20 @@ export default function ClientPortalParrillaPage() {
   // New comment input per post
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
 
-  const fetchPosts = useCallback(async () => {
+  // Client session & Switcher state
+  const [userSession, setUserSession] = useState<any>(null);
+  const [allClients, setAllClients] = useState<any[]>([]);
+  const [selectedClientId, setSelectedClientId] = useState<string>('');
+
+  const fetchPosts = useCallback(async (clientIdToFetch?: any) => {
     setLoading(true);
     try {
-      const res = await fetch('/api/content-posts');
+      const targetClient = typeof clientIdToFetch === 'string' ? clientIdToFetch : selectedClientId;
+      let url = '/api/content-posts';
+      if (targetClient && targetClient !== 'ALL') {
+        url += `?clientId=${targetClient}`;
+      }
+      const res = await fetch(url);
       const data = await res.json();
       if (data.posts) {
         setPosts(data.posts);
@@ -66,11 +82,85 @@ export default function ClientPortalParrillaPage() {
     } finally {
       setLoading(false);
     }
+  }, [selectedClientId]);
+
+  // Load session and initial client list
+  useEffect(() => {
+    async function init() {
+      try {
+        const authRes = await fetch('/api/auth/me');
+        const authData = await authRes.json();
+        const user = authData.user;
+        setUserSession(user);
+
+        let initialClientId = searchParams.get('clientId') || '';
+
+        if (user?.role === 'CLIENT') {
+          const cid = user.clientId || '';
+          setSelectedClientId(cid);
+          await fetchPosts(cid);
+        } else {
+          // Fetch all clients
+          const clientsRes = await fetch('/api/clients');
+          const clientsData = await clientsRes.json();
+          const clientList = clientsData.clients || [];
+          setAllClients(clientList);
+
+          if (!initialClientId && clientList.length > 0) {
+            initialClientId = clientList[0].id;
+          }
+          setSelectedClientId(initialClientId);
+          await fetchPosts(initialClientId);
+        }
+      } catch (err) {
+        console.error('Init error in client portal parrilla:', err);
+      }
+    }
+    init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const handleClientChange = (newId: string) => {
+    setSelectedClientId(newId);
+    const params = new URLSearchParams(window.location.search);
+    params.set('clientId', newId);
+    window.history.pushState(null, '', `?${params.toString()}`);
+    fetchPosts(newId);
+  };
+
+  // Handle direct navigation to a post via ?postId=... from notification
   useEffect(() => {
-    fetchPosts();
-  }, [fetchPosts]);
+    if (!targetPostId || posts.length === 0) return;
+
+    const targetPost = posts.find((p) => p.id === targetPostId);
+    if (targetPost) {
+      // Ensure the filter does not hide the post
+      if (
+        (statusFilter === 'PENDIENTE' && (targetPost.status === 'APROBADO' || targetPost.status === 'PUBLICADO')) ||
+        (statusFilter === 'APROBADAS' && (targetPost.status === 'PENDIENTE_APROBACION' || targetPost.status === 'CAMBIOS_SOLICITADOS'))
+      ) {
+        setStatusFilter('TODAS');
+      }
+
+      setHighlightedPostId(targetPostId);
+
+      const scrollTimer = setTimeout(() => {
+        const el = document.getElementById(`post-${targetPostId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 250);
+
+      const clearTimer = setTimeout(() => {
+        setHighlightedPostId(null);
+      }, 5000);
+
+      return () => {
+        clearTimeout(scrollTimer);
+        clearTimeout(clearTimer);
+      };
+    }
+  }, [targetPostId, posts, statusFilter]);
 
   // Status Action handlers
   const handleApprove = async (postId: string) => {
@@ -186,8 +276,29 @@ export default function ClientPortalParrillaPage() {
             </p>
           </div>
 
-          {/* Quick Progress Circle / Card */}
-          <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-4 flex items-center gap-4 shrink-0 shadow-lg">
+          <div className="flex flex-wrap items-center gap-4 shrink-0">
+            {userSession?.role !== 'CLIENT' && allClients.length > 0 && (
+              <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-4 flex items-center gap-3 shadow-lg shrink-0">
+                <Building2 className="h-5 w-5 text-purple-400 animate-pulse" />
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider font-display">Cliente</span>
+                  <select
+                    value={selectedClientId}
+                    onChange={(e) => handleClientChange(e.target.value)}
+                    className="bg-zinc-950 border border-zinc-700/80 rounded-lg px-2.5 py-1 text-white font-semibold focus:outline-none cursor-pointer text-xs"
+                  >
+                    {allClients.map((c) => (
+                      <option key={c.id} value={c.id} className="bg-zinc-900 text-white">
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {/* Quick Progress Circle / Card */}
+            <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-4 flex items-center gap-4 shrink-0 shadow-lg">
             <div className="relative h-14 w-14 flex items-center justify-center">
               <svg className="h-full w-full -rotate-90" viewBox="0 0 36 36">
                 <path
@@ -222,6 +333,7 @@ export default function ClientPortalParrillaPage() {
           </div>
         </div>
       </div>
+    </div>
 
       {/* Filter Tabs */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-800 pb-4">
@@ -326,7 +438,12 @@ export default function ClientPortalParrillaPage() {
             return (
               <div
                 key={post.id}
-                className="bg-[#0b0e14] border border-zinc-800/90 rounded-2xl overflow-hidden shadow-xl flex flex-col transition-all duration-200 hover:border-zinc-700"
+                id={`post-${post.id}`}
+                className={`bg-[#0b0e14] border rounded-2xl overflow-hidden shadow-xl flex flex-col transition-all duration-300 ${
+                  highlightedPostId === post.id
+                    ? 'border-purple-500 ring-2 ring-purple-500 ring-offset-2 ring-offset-zinc-950 shadow-2xl shadow-purple-500/30 scale-[1.01]'
+                    : 'border-zinc-800/90 hover:border-zinc-700'
+                }`}
               >
                 {/* Card Header */}
                 <div className="p-4 border-b border-zinc-800/80 bg-zinc-900/40 flex items-center justify-between">
@@ -560,5 +677,20 @@ export default function ClientPortalParrillaPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ClientPortalParrillaPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-8 text-center text-zinc-500 flex items-center justify-center gap-2">
+          <RefreshCw className="h-5 w-5 animate-spin text-purple-400" />
+          <span>Cargando centro de aprobación...</span>
+        </div>
+      }
+    >
+      <ClientPortalParrillaContent />
+    </Suspense>
   );
 }

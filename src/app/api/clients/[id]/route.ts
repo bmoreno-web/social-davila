@@ -367,8 +367,14 @@ export async function GET(
     let client: any = null;
     try {
       if (id) {
-        client = await prisma.client.findUnique({
-          where: { id },
+        client = await prisma.client.findFirst({
+          where: {
+            OR: [
+              { id },
+              { slug: id },
+              { metricoolBlogId: id }
+            ]
+          },
           include: {
             socialConnections: true,
             reports: {
@@ -382,7 +388,7 @@ export async function GET(
         });
       }
     } catch (e) {
-      console.warn('Prisma findUnique error:', e);
+      console.warn('Prisma findFirst error:', e);
     }
 
     if (!client) {
@@ -397,17 +403,16 @@ export async function GET(
          DEFAULT_BRANDS['cmtag1oha0000t0g80a05ym3q']);
     } else {
       // If DB client has empty recommendations, attach brand specific ones
-      if (!client.recommendations || client.recommendations.length === 0) {
-        const brandFallback = DEFAULT_BRANDS[id] || Object.values(DEFAULT_BRANDS).find(b => b.name.toLowerCase().includes(client.name.toLowerCase()));
-        if (brandFallback && brandFallback.recommendations) {
-          client.recommendations = brandFallback.recommendations;
-        }
+      const searchKey = `${client.slug} ${client.name}`.toLowerCase();
+      const brandFallback = Object.values(DEFAULT_BRANDS).find(b => 
+        searchKey.includes(b.slug.toLowerCase()) || searchKey.includes(b.name.toLowerCase()) || b.name.toLowerCase().includes(client.name.toLowerCase())
+      );
+
+      if ((!client.recommendations || client.recommendations.length === 0) && brandFallback?.recommendations) {
+        client.recommendations = brandFallback.recommendations;
       }
-      if (!client.reports || client.reports.length === 0) {
-        const brandFallback = DEFAULT_BRANDS[id] || Object.values(DEFAULT_BRANDS).find(b => b.name.toLowerCase().includes(client.name.toLowerCase()));
-        if (brandFallback && brandFallback.reports) {
-          client.reports = brandFallback.reports;
-        }
+      if ((!client.reports || client.reports.length === 0) && brandFallback?.reports) {
+        client.reports = brandFallback.reports;
       }
     }
 

@@ -91,7 +91,7 @@ export async function POST(
         type: 'APPROVED',
         title: '🚀 Publicación Programada en Redes',
         message: `El post "${updatedPost.title}" fue enviado a programar/publicar en ${providers.join(', ')} para ${updatedPost.client.name}.`,
-        link: '/parrilla',
+        link: `/parrilla?postId=${updatedPost.id}`,
         clientId: updatedPost.clientId,
         clientName: updatedPost.client.name,
         recipientRole: 'ALL',

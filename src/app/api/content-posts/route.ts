@@ -19,7 +19,18 @@ export async function GET(req: NextRequest) {
       if (!session.clientId) return NextResponse.json({ error: 'Sin cliente asignado' }, { status: 403 });
       whereClause.clientId = session.clientId;
     } else {
-      if (clientId && clientId !== 'ALL') whereClause.clientId = clientId;
+      if (clientId && clientId !== 'ALL') {
+        const found = await prisma.client.findFirst({
+          where: {
+            OR: [
+              { id: clientId },
+              { slug: clientId }
+            ]
+          },
+          select: { id: true }
+        });
+        whereClause.clientId = found ? found.id : clientId;
+      }
     }
 
     if (status && status !== 'ALL') {

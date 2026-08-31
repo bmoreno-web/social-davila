@@ -300,15 +300,10 @@ export default function ClienteDetallePage({
           setAnalysisText(clientData.client.reports[0].editorialAnalysis || '');
         }
       } else {
-        const fallbackClient = {
-          id: clientId,
-          name: clientId.includes('davila') ? 'Dávila P&M' : clientId.includes('serena') ? 'Hospital Serena del Mar' : clientId.includes('verano') ? 'Eduardo Verano De la Rosa' : clientId.includes('chapman') ? 'Charles Chapman' : clientId.includes('og') ? 'OG Realty Partners' : clientId.includes('zona') ? 'Zona Franca B/quilla' : 'Acesco Colombia',
-          status: 'ACTIVE',
-          industry: 'Construcción e Ingeniería',
-          metricoolId: 'Auto',
-          socialConnections: [{ id: 'sc1', platform: 'INSTAGRAM' }, { id: 'sc2', platform: 'FACEBOOK' }]
-        };
-        setClient(fallbackClient);
+        const found = allClientsData.clients?.find((c: any) => c.id === clientId || c.slug === clientId);
+        if (found) {
+          setClient(found);
+        }
       }
       if (metricsData.kpis) {
         setMetrics(metricsData);
@@ -533,14 +528,14 @@ export default function ClienteDetallePage({
     );
   }
 
-  const activeClient = client || {
-    id: clientId || 'cmtag1oha0000t0g80a05ym3q',
-    name: clientId?.includes('davila') ? 'Dávila P&M' : clientId?.includes('serena') ? 'Hospital Serena del Mar' : clientId?.includes('verano') ? 'Eduardo Verano De la Rosa' : clientId?.includes('chapman') ? 'Charles Chapman' : clientId?.includes('og') ? 'OG Realty Partners' : clientId?.includes('zona') ? 'Zona Franca B/quilla' : 'Acesco Colombia',
+  const activeClient = client || allClients.find((c) => c.id === clientId || c.slug === clientId) || {
+    id: clientId,
+    name: 'Cargando...',
     status: 'ACTIVE',
-    industry: 'Construcción e Ingeniería',
-    metricoolId: '2930665',
-    logo: 'https://static.metricool.com/brand-logo/202409/2930665-temp-file16623787061548330277.com-brand-facebook-page-image',
-    socialConnections: [{ id: 'sc1', platform: 'INSTAGRAM' }, { id: 'sc2', platform: 'FACEBOOK' }]
+    industry: 'Marketing & Digital',
+    metricoolBlogId: '',
+    logo: '',
+    socialConnections: []
   };
 
   const kpis = metrics?.kpis || {

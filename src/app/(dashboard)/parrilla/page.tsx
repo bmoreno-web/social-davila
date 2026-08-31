@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   CalendarDays,
   Kanban,
@@ -24,7 +25,11 @@ import { ContentKanbanView } from '@/components/parrilla/content-kanban-view';
 import { ContentModal } from '@/components/parrilla/content-modal';
 import { ContentPost, ContentPostStatus } from '@/components/parrilla/types';
 
-export default function ParrillaPage() {
+function ParrillaContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const targetPostId = searchParams.get('postId');
+
   const [clients, setClients] = useState<any[]>([]);
   const [selectedClientId, setSelectedClientId] = useState('ALL');
   const [currentDate, setCurrentDate] = useState(new Date(2026, 7, 1)); // Default Aug 2026
@@ -46,9 +51,6 @@ export default function ParrillaPage() {
         const data = await res.json();
         if (data.clients) {
           setClients(data.clients);
-          if (data.clients.length > 0 && selectedClientId === 'ALL') {
-            // Keep ALL or default to first
-          }
         }
       } catch (err) {
         console.error('Error fetching clients:', err);
@@ -84,6 +86,37 @@ export default function ParrillaPage() {
     fetchPosts();
   }, [fetchPosts]);
 
+  // Handle direct navigation to a post via ?postId=...
+  useEffect(() => {
+    if (!targetPostId) return;
+
+    // Check if post is already in current list
+    const found = posts.find((p) => p.id === targetPostId);
+    if (found) {
+      setSelectedPost(found);
+      setModalOpen(true);
+      const pDate = new Date(found.scheduledDate);
+      if (!isNaN(pDate.getTime()) && (pDate.getMonth() !== currentDate.getMonth() || pDate.getFullYear() !== currentDate.getFullYear())) {
+        setCurrentDate(new Date(pDate.getFullYear(), pDate.getMonth(), 1));
+      }
+    } else {
+      // Direct fetch from single post endpoint
+      fetch(`/api/content-posts/${targetPostId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.post) {
+            setSelectedPost(data.post);
+            setModalOpen(true);
+            const pDate = new Date(data.post.scheduledDate);
+            if (!isNaN(pDate.getTime())) {
+              setCurrentDate(new Date(pDate.getFullYear(), pDate.getMonth(), 1));
+            }
+          }
+        })
+        .catch((err) => console.error('Error opening target post from notification:', err));
+    }
+  }, [targetPostId, posts]);
+
   // Statistics calculation
   const totalPosts = posts.length;
   const pendingApproval = posts.filter((p) => p.status === 'PENDIENTE_APROBACION').length;
@@ -103,6 +136,13 @@ export default function ParrillaPage() {
   const handleSelectPost = (p: ContentPost) => {
     setSelectedPost(p);
     setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    if (targetPostId) {
+      router.replace('/parrilla', { scroll: false });
+    }
   };
 
   return (
@@ -287,12 +327,27 @@ export default function ParrillaPage() {
       {/* Creation & Edition Modal */}
       <ContentModal
         isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={handleCloseModal}
         post={selectedPost}
         clients={clients}
         selectedClientId={selectedClientId}
         onSaved={fetchPosts}
       />
     </div>
+  );
+}
+
+export default function ParrillaPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-8 text-center text-zinc-500 flex items-center justify-center gap-2">
+          <RefreshCw className="h-5 w-5 animate-spin text-purple-400" />
+          <span>Cargando parrilla de contenidos...</span>
+        </div>
+      }
+    >
+      <ParrillaContent />
+    </Suspense>
   );
 }

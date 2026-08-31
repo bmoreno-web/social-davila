@@ -362,7 +362,14 @@ Durante el período evaluado, la presencia digital de **Acesco Colombia** experi
     }
   });
 
-  // 7. Seed Planned Content Posts & Client Approvals
+  // 7. Seed Planned Content Posts & Client Approvals for all brands
+  const serenaClient = createdClients[2];
+  const zfClient = createdClients[3];
+  const veranoClient = createdClients[4];
+  const chapmanClient = createdClients[5];
+  const ogClient = createdClients[6];
+
+  // Acesco Colombia Posts
   const post1 = await prisma.contentPost.create({
     data: {
       clientId: acescoClient.id,
@@ -442,45 +449,207 @@ Durante el período evaluado, la presencia digital de **Acesco Colombia** experi
     }
   });
 
-  // 8. Seed Initial In-App Notifications
-  await prisma.notification.create({
-    data: {
-      clientId: acescoClient.id,
-      recipientRole: 'AGENCY',
-      type: 'CHANGES_REQUESTED',
-      title: '⚠️ Cambios solicitados en publicación',
-      message: 'Carlos Mendoza (Acesco) solicitó corregir el dato técnico al 75% en el Carrusel Galvalume.',
-      link: '/parrilla',
-      read: false,
-      createdAt: new Date('2026-08-28T09:15:00Z')
-    }
-  });
+  // Dávila P&M Posts
+  if (davilaClient) {
+    await prisma.contentPost.create({
+      data: {
+        clientId: davilaClient.id,
+        title: 'Reel: Behind The Scenes Campaña Creativa Caribe 2026',
+        copy: 'Detrás de cada gran idea hay un equipo apasionado de estrategas, directores creativos y diseñadores. 💡🎨 Conoce el proceso de producción de nuestra última campaña regional.\n\n#DavilaPM #PublicidadCreativa #MarketingEstrategico #TransformacionDigital',
+        scheduledDate: new Date('2026-08-30T15:00:00Z'),
+        platforms: 'INSTAGRAM,LINKEDIN',
+        contentType: 'REEL',
+        mediaUrls: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&auto=format&fit=crop&q=80',
+        status: 'APROBADO',
+        approvedAt: new Date('2026-08-28T10:00:00Z'),
+        approvedBy: 'Dirección General Davila',
+        tags: 'Cultura de Agencia, Branding'
+      }
+    });
 
-  await prisma.notification.create({
-    data: {
-      clientId: acescoClient.id,
-      recipientRole: 'AGENCY',
-      type: 'APPROVED',
-      title: '🎉 Publicación Aprobada por Cliente',
-      message: 'Acesco Colombia aprobó el post "Caso de Éxito: Mega Puente Estructura Metálica".',
-      link: '/parrilla',
-      read: false,
-      createdAt: new Date('2026-08-28T08:00:00Z')
-    }
-  });
+    await prisma.contentPost.create({
+      data: {
+        clientId: davilaClient.id,
+        title: 'Carrusel: 5 Métricas que todo CMO debe auditar en 2026',
+        copy: '¿Sigues midiendo solo likes? 📊 Descubre cómo el Engagement Calificado, el ROI de contenido y el Share of Voice determinan el verdadero éxito de tu marca.\n\nGuarda esta guía estratégica 📥\n\n#MarketingAnalytics #CMO #DavilaPM #MetricasSociales',
+        scheduledDate: new Date('2026-09-01T14:30:00Z'),
+        platforms: 'LINKEDIN,INSTAGRAM',
+        contentType: 'CAROUSEL',
+        mediaUrls: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=80',
+        status: 'PENDIENTE_APROBACION',
+        tags: 'Thought Leadership, B2B'
+      }
+    });
 
-  await prisma.notification.create({
-    data: {
-      clientId: acescoClient.id,
-      recipientRole: 'CLIENT',
-      type: 'REVIEW_REQUESTED',
-      title: '📋 Nueva propuesta lista para tu revisión',
-      message: 'El equipo de Davila PM ha cargado el Reel de Cubiertas para tu aprobación.',
-      link: '/portal/parrilla',
-      read: false,
-      createdAt: new Date('2026-08-27T14:30:00Z')
-    }
-  });
+    await prisma.contentPost.create({
+      data: {
+        clientId: davilaClient.id,
+        title: 'Post Imagen: Transformación Digital & IA Publicitaria',
+        copy: 'La inteligencia artificial no reemplaza la creatividad, potencia a los mejores creadores. En Davila PM integramos modelos predictivos para maximizar el impacto de cada pauta. 🚀',
+        scheduledDate: new Date('2026-09-05T16:00:00Z'),
+        platforms: 'INSTAGRAM,FACEBOOK',
+        contentType: 'IMAGE',
+        mediaUrls: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
+        status: 'BORRADOR',
+        tags: 'Innovacion, IA'
+      }
+    });
+  }
+
+  // Hospital Serena del Mar Posts
+  if (serenaClient) {
+    await prisma.contentPost.create({
+      data: {
+        clientId: serenaClient.id,
+        title: 'Reel: Voces Médicas — Avances en Cirugía Robótica',
+        copy: 'En el Hospital Serena del Mar contamos con tecnología quirúrgica de vanguardia para procedimientos mínimamente invasivos y recuperaciones más rápidas. 🏥 Conoce la explicación de nuestros cirujanos líderes.\n\n#SaludIntegral #HospitalSerenaDelMar #MedicinaAvanzada #Cartagena',
+        scheduledDate: new Date('2026-08-30T17:00:00Z'),
+        platforms: 'FACEBOOK,INSTAGRAM',
+        contentType: 'REEL',
+        mediaUrls: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&auto=format&fit=crop&q=80',
+        status: 'APROBADO',
+        tags: 'Medicina, Tecnologia'
+      }
+    });
+
+    await prisma.contentPost.create({
+      data: {
+        clientId: serenaClient.id,
+        title: 'Carrusel: Guía de Prevención Cardiovascular y Chequeos Preventivos',
+        copy: 'Cuidar de tu corazón es cuidar de tu futuro. ❤️ Conoce los 5 chequeos esenciales que debes realizarte anualmente según tu edad.\n\nAgenda tu cita con nuestros especialistas en el link de la biografía.\n\n#SaludCardiovascular #ChequeoPreventivo #HSDM',
+        scheduledDate: new Date('2026-09-03T15:00:00Z'),
+        platforms: 'FACEBOOK',
+        contentType: 'CAROUSEL',
+        mediaUrls: 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=800&auto=format&fit=crop&q=80',
+        status: 'PENDIENTE_APROBACION',
+        tags: 'Prevencion, Bienestar'
+      }
+    });
+  }
+
+  // Zona Franca Barranquilla Posts
+  if (zfClient) {
+    await prisma.contentPost.create({
+      data: {
+        clientId: zfClient.id,
+        title: 'Reel: Barranquilla — El Hub Logístico y Portuario del Caribe',
+        copy: 'Ubicación privilegiada, conectividad multimodal y beneficios del régimen franco. Descubre por qué más de 120 multinacionales confían en Zona Franca de Barranquilla para sus operaciones de comercio exterior. 🚢✈️📦\n\n#ZonaFrancaBarranquilla #LogisticaCaribe #ComercioExterior #InversionColombia',
+        scheduledDate: new Date('2026-08-31T16:30:00Z'),
+        platforms: 'INSTAGRAM,LINKEDIN,FACEBOOK',
+        contentType: 'REEL',
+        mediaUrls: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800&auto=format&fit=crop&q=80',
+        status: 'APROBADO',
+        tags: 'Logistica, Inversion'
+      }
+    });
+
+    await prisma.contentPost.create({
+      data: {
+        clientId: zfClient.id,
+        title: 'Carrusel: 3 Beneficios Tributarios del Régimen Franco en 2026',
+        copy: 'Optimiza tus costos operativos con tarifa especial del 20% en renta, exención de IVA y aranceles en materias primas importadas. 📑🏢\n\n#ZFBaq #Nearshoring #RegimenFranco',
+        scheduledDate: new Date('2026-09-04T14:00:00Z'),
+        platforms: 'LINKEDIN,FACEBOOK',
+        contentType: 'CAROUSEL',
+        mediaUrls: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&auto=format&fit=crop&q=80',
+        status: 'PENDIENTE_APROBACION',
+        tags: 'Tributario, B2B'
+      }
+    });
+  }
+
+  // Eduardo Verano De la Rosa Posts
+  if (veranoClient) {
+    await prisma.contentPost.create({
+      data: {
+        clientId: veranoClient.id,
+        title: 'TikTok: En el Territorio — Inauguración del nuevo acueducto',
+        copy: '¡Agua potable y dignidad para más familias del Atlántico! 💧👏 Estuvimos en Repelón entregando el nuevo sistema de acueducto veredal. El desarrollo llega a cada rincón del departamento.\n\n#AtlánticoParaElMundo #EduardoVerano #ObrasQueTransforman #Caribe',
+        scheduledDate: new Date('2026-08-29T18:00:00Z'),
+        platforms: 'TIKTOK',
+        contentType: 'REEL',
+        mediaUrls: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&auto=format&fit=crop&q=80',
+        status: 'APROBADO',
+        tags: 'GestionDepartamental, Territorio'
+      }
+    });
+
+    await prisma.contentPost.create({
+      data: {
+        clientId: veranoClient.id,
+        title: 'Carrusel: 50km de Nuevas Vías Departamentales en Marcha',
+        copy: 'Conectando a nuestros campesinos y municipios con los grandes centros de acopio. Conoce los tramos viales que estamos pavimentando este mes. 🛣️🚜\n\n#ViasParaElProgreso #AtlánticoLider',
+        scheduledDate: new Date('2026-09-02T16:00:00Z'),
+        platforms: 'TIKTOK,FACEBOOK',
+        contentType: 'CAROUSEL',
+        mediaUrls: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&auto=format&fit=crop&q=80',
+        status: 'PENDIENTE_APROBACION',
+        tags: 'Infraestructura, RendicionDeCuentas'
+      }
+    });
+  }
+
+  // Charles Chapman Posts
+  if (chapmanClient) {
+    await prisma.contentPost.create({
+      data: {
+        clientId: chapmanClient.id,
+        title: 'Video: Análisis Express — Implicaciones de la Reforma Laboral en Nómina',
+        copy: '¿Cómo impactan los nuevos recargos dominicales y nocturnos la estructura de costos de las medianas y grandes empresas? ⚖️ Breve análisis jurídico de Charles Chapman.\n\n#DerechoLaboral #ChapmanWilches #GestionHumana #TalentoHumano',
+        scheduledDate: new Date('2026-08-30T14:00:00Z'),
+        platforms: 'LINKEDIN',
+        contentType: 'REEL',
+        mediaUrls: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=800&auto=format&fit=crop&q=80',
+        status: 'APROBADO',
+        tags: 'AnalisisJuridico, ReformaLaboral'
+      }
+    });
+
+    await prisma.contentPost.create({
+      data: {
+        clientId: chapmanClient.id,
+        title: 'Carrusel: 5 Claves para prevenir litigios laborales en empresas',
+        copy: 'Auditoría preventiva de contratos, manuales de convivencia y debido proceso en descargos disciplinarios. Desliza para conocer la matriz de prevención Chapman. 📑⚖️\n\n#ComplianceLaboral #EmpresasColombia',
+        scheduledDate: new Date('2026-09-03T14:30:00Z'),
+        platforms: 'LINKEDIN',
+        contentType: 'CAROUSEL',
+        mediaUrls: 'https://images.unsplash.com/photo-1450133064473-71024230f91b?w=800&auto=format&fit=crop&q=80',
+        status: 'PENDIENTE_APROBACION',
+        tags: 'PrevencionLitigios, DirectoresHR'
+      }
+    });
+  }
+
+  // OG Realty Partners Posts
+  if (ogClient) {
+    await prisma.contentPost.create({
+      data: {
+        clientId: ogClient.id,
+        title: 'Reel: Recorrido Inmersivo Penthouse con Vista al Mar',
+        copy: 'Exclusividad, arquitectura de autor y acabados de lujo. 🌊🏢 Conoce este exclusivo penthouse disponible para entrega inmediata en la zona de mayor plusvalía.\n\nSolicita el dossier privado en el enlace de la bio.\n\n#OGRealty #BienesRaicesLujo #RealEstateColombia #LuxuryLiving',
+        scheduledDate: new Date('2026-08-31T17:00:00Z'),
+        platforms: 'INSTAGRAM',
+        contentType: 'REEL',
+        mediaUrls: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&auto=format&fit=crop&q=80',
+        status: 'APROBADO',
+        tags: 'Inmobiliaria, Luxury'
+      }
+    });
+
+    await prisma.contentPost.create({
+      data: {
+        clientId: ogClient.id,
+        title: 'Carrusel: Retorno de Inversión (ROI) en Rentas Cortas vs Tradicional',
+        copy: '¿Por qué las propiedades turísticas en el Caribe generan hasta un 12.5% de rentabilidad anual en dólares? Desliza para ver el desglose financiero. 📈💰\n\n#InversionInmobiliaria #Airbnb #Plusvalia',
+        scheduledDate: new Date('2026-09-04T15:00:00Z'),
+        platforms: 'INSTAGRAM',
+        contentType: 'CAROUSEL',
+        mediaUrls: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&auto=format&fit=crop&q=80',
+        status: 'PENDIENTE_APROBACION',
+        tags: 'Finanzas, ROI'
+      }
+    });
+  }
 
   // 9. Initial Audit Log
   await prisma.auditLog.create({

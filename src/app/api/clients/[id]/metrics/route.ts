@@ -11,9 +11,8 @@ interface BrandMetricsMeta {
   platforms: { platform: string; followers: number; reach: number; engagementRate: number; likes: number; comments: number; shares: number }[];
 }
 
-const BRAND_METRICS: Record<string, BrandMetricsMeta> = {
-  // Acesco
-  'cmtag1oha0000t0g80a05ym3q': {
+const BRAND_METRICS_MAP: Record<string, BrandMetricsMeta> = {
+  acesco: {
     name: 'Acesco Colombia',
     followers: 29903,
     reach: 68400,
@@ -24,8 +23,7 @@ const BRAND_METRICS: Record<string, BrandMetricsMeta> = {
       { platform: 'FACEBOOK', followers: 14200, reach: 19900, engagementRate: 4.8, likes: 980, comments: 65, shares: 120 }
     ]
   },
-  // Dávila P&M
-  'cmtag1on80003t0g8l4a3cliz': {
+  davila: {
     name: 'Dávila P&M',
     followers: 4690,
     reach: 28700,
@@ -36,8 +34,7 @@ const BRAND_METRICS: Record<string, BrandMetricsMeta> = {
       { platform: 'LINKEDIN', followers: 2850, reach: 9800, engagementRate: 5.2, likes: 480, comments: 55, shares: 78 }
     ]
   },
-  // Hospital Serena del Mar
-  'cmtag1ow70008t0g8f2fgh1yd': {
+  serena: {
     name: 'Hospital Serena del Mar',
     followers: 16800,
     reach: 34200,
@@ -47,8 +44,7 @@ const BRAND_METRICS: Record<string, BrandMetricsMeta> = {
       { platform: 'FACEBOOK', followers: 16800, reach: 34200, engagementRate: 5.8, likes: 1620, comments: 130, shares: 185 }
     ]
   },
-  // Zona Franca Barranquilla
-  'cmtag1oyx000at0g8h2fuyif8': {
+  zona: {
     name: 'Zona Franca B/quilla',
     followers: 15804,
     reach: 44700,
@@ -60,8 +56,19 @@ const BRAND_METRICS: Record<string, BrandMetricsMeta> = {
       { platform: 'LINKEDIN', followers: 7400, reach: 18600, engagementRate: 5.6, likes: 940, comments: 85, shares: 110 }
     ]
   },
-  // Eduardo Verano
-  'cmtag1p0z000ct0g8w9h3k2lm': {
+  zfbaq: {
+    name: 'Zona Franca B/quilla',
+    followers: 15804,
+    reach: 44700,
+    impressions: 62400,
+    engagement: 5.9,
+    platforms: [
+      { platform: 'INSTAGRAM', followers: 2604, reach: 14200, engagementRate: 6.1, likes: 820, comments: 72, shares: 64 },
+      { platform: 'FACEBOOK', followers: 5800, reach: 11900, engagementRate: 4.2, likes: 510, comments: 38, shares: 42 },
+      { platform: 'LINKEDIN', followers: 7400, reach: 18600, engagementRate: 5.6, likes: 940, comments: 85, shares: 110 }
+    ]
+  },
+  verano: {
     name: 'Eduardo Verano De la Rosa',
     followers: 48900,
     reach: 98400,
@@ -71,8 +78,7 @@ const BRAND_METRICS: Record<string, BrandMetricsMeta> = {
       { platform: 'TIKTOK', followers: 48900, reach: 98400, engagementRate: 8.4, likes: 7800, comments: 640, shares: 920 }
     ]
   },
-  // Charles Chapman
-  'cmtag1p4a000et0g8gbyk9m1m': {
+  chapman: {
     name: 'Charles Chapman',
     followers: 18400,
     reach: 24500,
@@ -82,8 +88,17 @@ const BRAND_METRICS: Record<string, BrandMetricsMeta> = {
       { platform: 'LINKEDIN', followers: 18400, reach: 24500, engagementRate: 6.8, likes: 1480, comments: 190, shares: 165 }
     ]
   },
-  // OG Realty Partners
-  'cmtag1p7q000gt0g8k86l2mfr': {
+  realty: {
+    name: 'OG Realty Partners',
+    followers: 1450,
+    reach: 8900,
+    impressions: 13400,
+    engagement: 5.9,
+    platforms: [
+      { platform: 'INSTAGRAM', followers: 1450, reach: 8900, engagementRate: 5.9, likes: 490, comments: 45, shares: 38 }
+    ]
+  },
+  og: {
     name: 'OG Realty Partners',
     followers: 1450,
     reach: 8900,
@@ -95,16 +110,59 @@ const BRAND_METRICS: Record<string, BrandMetricsMeta> = {
   }
 };
 
-function resolveBrandMetrics(id: string): BrandMetricsMeta {
-  if (BRAND_METRICS[id]) return BRAND_METRICS[id];
-  const lower = id.toLowerCase();
-  if (lower.includes('davila')) return BRAND_METRICS['cmtag1on80003t0g8l4a3cliz'];
-  if (lower.includes('serena')) return BRAND_METRICS['cmtag1ow70008t0g8f2fgh1yd'];
-  if (lower.includes('zona') || lower.includes('zfbaq')) return BRAND_METRICS['cmtag1oyx000at0g8h2fuyif8'];
-  if (lower.includes('verano')) return BRAND_METRICS['cmtag1p0z000ct0g8w9h3k2lm'];
-  if (lower.includes('chapman')) return BRAND_METRICS['cmtag1p4a000et0g8gbyk9m1m'];
-  if (lower.includes('og') || lower.includes('realty')) return BRAND_METRICS['cmtag1p7q000gt0g8k86l2mfr'];
-  return BRAND_METRICS['cmtag1oha0000t0g80a05ym3q'];
+async function resolveBrandMetrics(id: string): Promise<BrandMetricsMeta> {
+  let dbClient: any = null;
+  try {
+    dbClient = await prisma.client.findFirst({
+      where: {
+        OR: [
+          { id },
+          { slug: id },
+          { metricoolBlogId: id }
+        ]
+      },
+      include: {
+        socialConnections: true
+      }
+    });
+  } catch (e) {
+    console.warn('Prisma lookup warning in metrics API:', e);
+  }
+
+  const queryKey = (dbClient ? `${dbClient.slug} ${dbClient.name}` : id).toLowerCase();
+
+  for (const [key, meta] of Object.entries(BRAND_METRICS_MAP)) {
+    if (queryKey.includes(key)) {
+      return meta;
+    }
+  }
+
+  if (dbClient) {
+    const platforms = dbClient.socialConnections.map((s: any) => ({
+      platform: s.platform,
+      followers: s.followers || 5000,
+      reach: (s.followers || 5000) * 1.5,
+      engagementRate: 5.5,
+      likes: 350,
+      comments: 35,
+      shares: 40
+    }));
+
+    const totalFollowers = platforms.reduce((a: number, b: any) => a + b.followers, 0) || 5000;
+    const totalReach = Math.round(totalFollowers * 1.6);
+    return {
+      name: dbClient.name,
+      followers: totalFollowers,
+      reach: totalReach,
+      impressions: Math.round(totalReach * 1.35),
+      engagement: 5.8,
+      platforms: platforms.length > 0 ? platforms : [
+        { platform: 'INSTAGRAM', followers: 3200, reach: 5000, engagementRate: 5.8, likes: 280, comments: 30, shares: 25 }
+      ]
+    };
+  }
+
+  return BRAND_METRICS_MAP.acesco;
 }
 
 export async function GET(
@@ -149,7 +207,7 @@ export async function GET(
       dateLabel = 'Año en Curso';
     }
 
-    const brand = resolveBrandMetrics(id);
+    const brand = await resolveBrandMetrics(id);
     const timeline = generateTimelineMetrics(days, brand.followers);
 
     const totalLikes = brand.platforms.reduce((acc, p) => acc + p.likes, 0);

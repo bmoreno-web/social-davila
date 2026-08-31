@@ -4,13 +4,15 @@ import { getSession } from '@/lib/auth/session';
 import { metricoolService } from '@/lib/metricool/client';
 
 const BRAND_METRICS_MAP: Record<string, { name: string; industry: string; blogId: string; userId: string; networks: string[] }> = {
-  'cmtag1oha0000t0g80a05ym3q': { name: 'Acesco Colombia', industry: 'Construcción e Ingeniería en Acero', blogId: '2930665', userId: '1395490', networks: ['instagram', 'facebook'] },
-  'cmtag1on80003t0g8l4a3cliz': { name: 'Dávila P&M', industry: 'Publicidad, Marketing & Transformación Digital', blogId: '4056236', userId: '1395490', networks: ['instagram', 'linkedin'] },
-  'cmtag1ow70008t0g8f2fgh1yd': { name: 'Hospital Serena del Mar', industry: 'Salud, Medicina de Alta Complejidad', blogId: '3996019', userId: '1395490', networks: ['facebook'] },
-  'cmtag1oyx000at0g8h2fuyif8': { name: 'Zona Franca B/quilla', industry: 'Comercio Exterior, Logística & Parques Industriales', blogId: '4058165', userId: '1395490', networks: ['instagram', 'facebook', 'linkedin'] },
-  'cmtag1p0z000ct0g8w9h3k2lm': { name: 'Eduardo Verano De la Rosa', industry: 'Sector Público, Gestión Departamental & Liderazgo', blogId: '4058776', userId: '1395490', networks: ['tiktok'] },
-  'cmtag1p4a000et0g8gbyk9m1m': { name: 'Charles Chapman', industry: 'Derecho Laboral, Consultoría Corporativa', blogId: '4588040', userId: '1395490', networks: ['linkedin'] },
-  'cmtag1p7q000gt0g8k86l2mfr': { name: 'OG Realty Partners', industry: 'Inversión Inmobiliaria & Bienes Raíces', blogId: '4559324', userId: '1395490', networks: ['instagram'] }
+  acesco: { name: 'Acesco Colombia', industry: 'Construcción e Ingeniería en Acero', blogId: '2930665', userId: '1395490', networks: ['instagram', 'facebook'] },
+  davila: { name: 'Dávila P&M', industry: 'Publicidad, Marketing & Transformación Digital', blogId: '4056236', userId: '1395490', networks: ['instagram', 'linkedin'] },
+  serena: { name: 'Hospital Serena del Mar', industry: 'Salud, Medicina de Alta Complejidad', blogId: '3996019', userId: '1395490', networks: ['facebook'] },
+  zona: { name: 'Zona Franca B/quilla', industry: 'Comercio Exterior, Logística & Parques Industriales', blogId: '4058165', userId: '1395490', networks: ['instagram', 'facebook', 'linkedin'] },
+  zfbaq: { name: 'Zona Franca B/quilla', industry: 'Comercio Exterior, Logística & Parques Industriales', blogId: '4058165', userId: '1395490', networks: ['instagram', 'facebook', 'linkedin'] },
+  verano: { name: 'Eduardo Verano De la Rosa', industry: 'Sector Público, Gestión Departamental & Liderazgo', blogId: '4058776', userId: '1395490', networks: ['tiktok'] },
+  chapman: { name: 'Charles Chapman', industry: 'Derecho Laboral, Consultoría Corporativa', blogId: '4588040', userId: '1395490', networks: ['linkedin'] },
+  realty: { name: 'OG Realty Partners', industry: 'Inversión Inmobiliaria & Bienes Raíces', blogId: '4559324', userId: '1395490', networks: ['instagram'] },
+  og: { name: 'OG Realty Partners', industry: 'Inversión Inmobiliaria & Bienes Raíces', blogId: '4559324', userId: '1395490', networks: ['instagram'] }
 };
 
 export async function POST(
@@ -30,7 +32,41 @@ export async function POST(
       if (body?.target) target = body.target;
     } catch (e) {}
 
-    const brandInfo = BRAND_METRICS_MAP[id] || Object.values(BRAND_METRICS_MAP).find(b => b.name.toLowerCase().includes(id.toLowerCase())) || BRAND_METRICS_MAP['cmtag1oha0000t0g80a05ym3q'];
+    let dbClient: any = null;
+    try {
+      dbClient = await prisma.client.findFirst({
+        where: {
+          OR: [
+            { id },
+            { slug: id },
+            { metricoolBlogId: id }
+          ]
+        },
+        include: { socialConnections: true }
+      });
+    } catch (e) {}
+
+    let brandInfo = BRAND_METRICS_MAP.acesco;
+    const queryKey = (dbClient ? `${dbClient.slug} ${dbClient.name}` : id).toLowerCase();
+
+    for (const [key, info] of Object.entries(BRAND_METRICS_MAP)) {
+      if (queryKey.includes(key)) {
+        brandInfo = info;
+        break;
+      }
+    }
+
+    if (dbClient) {
+      brandInfo = {
+        name: dbClient.name,
+        industry: dbClient.industry || brandInfo.industry || 'Marketing & Publicidad',
+        blogId: dbClient.metricoolBlogId || brandInfo.blogId,
+        userId: dbClient.metricoolUserId || '1395490',
+        networks: dbClient.socialConnections.length > 0
+          ? dbClient.socialConnections.map((s: any) => s.platform.toLowerCase())
+          : brandInfo.networks
+      };
+    }
 
     let livePosts: any[] = [];
     try {

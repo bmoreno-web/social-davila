@@ -236,9 +236,11 @@ export default function ClientPortalHomePage() {
 
       if (currentUser?.role === 'CLIENT') {
         // Locked to their specific brand
-        const activeId = currentUser.clientId || 'cmtag1oha0000t0g80a05ym3q';
-        setSelectedClientId(activeId);
-        await loadClientDetails(activeId, dateRangePreset);
+        const activeId = currentUser.clientId || '';
+        if (activeId) {
+          setSelectedClientId(activeId);
+          await loadClientDetails(activeId, dateRangePreset);
+        }
       } else {
         // Agency team (ADMIN / ANALYST) can switch clients
         const clientsRes = await fetch('/api/clients');
@@ -246,9 +248,11 @@ export default function ClientPortalHomePage() {
         const clientList = clientsData.clients || [];
         setAllClients(clientList);
 
-        const activeId = selectedClientId || clientList[0]?.id || 'cmtag1oha0000t0g80a05ym3q';
-        setSelectedClientId(activeId);
-        await loadClientDetails(activeId, dateRangePreset);
+        const activeId = selectedClientId || clientList[0]?.id || '';
+        if (activeId) {
+          setSelectedClientId(activeId);
+          await loadClientDetails(activeId, dateRangePreset);
+        }
       }
     } catch (e) {
       console.error('Error loading portal data:', e);
@@ -402,7 +406,7 @@ export default function ClientPortalHomePage() {
               </div>
             )}
 
-            <Link href="/portal/parrilla">
+            <Link href={`/portal/parrilla?clientId=${selectedClientId}`}>
               <Button variant="glass" className="border-amber-500/30 text-amber-300 hover:bg-amber-500/10 text-xs gap-1.5 py-2">
                 <Sparkles className="h-4 w-4 text-amber-400" />
                 <span>Aprobar Contenidos</span>

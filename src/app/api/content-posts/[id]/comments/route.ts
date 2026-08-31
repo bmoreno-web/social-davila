@@ -48,7 +48,7 @@ export async function POST(
         type: 'NEW_COMMENT',
         title: `💬 Nuevo mensaje de ${session.name}`,
         message: `${session.name} comentó en "${post.title}": "${text.trim().slice(0, 100)}${text.length > 100 ? '...' : ''}"`,
-        link: isClientAuthor ? '/parrilla' : '/portal/parrilla',
+        link: isClientAuthor ? `/parrilla?postId=${post.id}` : `/portal/parrilla?postId=${post.id}`,
         clientId: post.clientId,
         clientName: post.client.name,
         recipientRole: isClientAuthor ? 'AGENCY' : 'CLIENT',
