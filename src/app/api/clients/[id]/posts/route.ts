@@ -4,24 +4,7 @@ import { getSession } from '@/lib/auth/session';
 import { metricoolService } from '@/lib/metricool/client';
 import { getMockPostsForBrand } from '@/lib/metricool/mock';
 
-interface BrandConfig {
-  blogId: string;
-  userId: string;
-  name: string;
-  networks: ('instagram' | 'facebook' | 'tiktok' | 'linkedin')[];
-}
-
-const KNOWN_BRAND_CONFIGS: Record<string, { blogId: string; userId: string; name: string; networks: ('instagram' | 'facebook' | 'tiktok' | 'linkedin')[] }> = {
-  acesco: { blogId: '2930665', userId: '1395490', name: 'Acesco Colombia', networks: ['instagram', 'facebook'] },
-  davila: { blogId: '4056236', userId: '1395490', name: 'Dávila P&M', networks: ['instagram', 'facebook'] },
-  serena: { blogId: '3996019', userId: '1395490', name: 'Hospital Serena del Mar', networks: ['facebook'] },
-  zona: { blogId: '4058165', userId: '1395490', name: 'Zona Franca B/quilla', networks: ['instagram', 'facebook', 'linkedin'] },
-  zfbaq: { blogId: '4058165', userId: '1395490', name: 'Zona Franca B/quilla', networks: ['instagram', 'facebook', 'linkedin'] },
-  verano: { blogId: '4058776', userId: '1395490', name: 'Eduardo Verano De la Rosa', networks: ['tiktok'] },
-  chapman: { blogId: '4588040', userId: '1395490', name: 'Charles Chapman', networks: ['linkedin'] },
-  realty: { blogId: '4559324', userId: '1395490', name: 'OG Realty Partners', networks: ['instagram'] },
-  og: { blogId: '4559324', userId: '1395490', name: 'OG Realty Partners', networks: ['instagram'] }
-};
+import { findBrandByQuery } from '@/lib/brands';
 
 async function resolveBrandData(id: string) {
   let dbClient: any = null;
@@ -39,7 +22,7 @@ async function resolveBrandData(id: string) {
       }
     });
   } catch (e) {
-    console.warn('Prisma client lookup error in posts API:', e);
+    // DB unreachable or fallback
   }
 
   if (dbClient) {
@@ -57,27 +40,14 @@ async function resolveBrandData(id: string) {
     };
   }
 
-  // Fallback matching by key/keyword
-  const lower = id.toLowerCase();
-  for (const [key, cfg] of Object.entries(KNOWN_BRAND_CONFIGS)) {
-    if (lower === key || lower.includes(key) || cfg.name.toLowerCase().includes(lower)) {
-      return {
-        clientId: id,
-        name: cfg.name,
-        blogId: cfg.blogId,
-        userId: cfg.userId,
-        networks: cfg.networks,
-        dbClient: null
-      };
-    }
-  }
-
+  // Fallback matching using centralized brand registry
+  const matched = findBrandByQuery(id);
   return {
-    clientId: id,
-    name: 'Acesco Colombia',
-    blogId: '2930665',
-    userId: '1395490',
-    networks: ['instagram', 'facebook'] as ('instagram' | 'facebook')[],
+    clientId: matched.id,
+    name: matched.name,
+    blogId: matched.metricoolBlogId,
+    userId: matched.metricoolUserId,
+    networks: matched.networks,
     dbClient: null
   };
 }

@@ -110,6 +110,8 @@ const BRAND_METRICS_MAP: Record<string, BrandMetricsMeta> = {
   }
 };
 
+import { findBrandByQuery } from '@/lib/brands';
+
 async function resolveBrandMetrics(id: string): Promise<BrandMetricsMeta> {
   let dbClient: any = null;
   try {
@@ -125,27 +127,17 @@ async function resolveBrandMetrics(id: string): Promise<BrandMetricsMeta> {
         socialConnections: true
       }
     });
-  } catch (e) {
-    console.warn('Prisma lookup warning in metrics API:', e);
-  }
+  } catch (e) {}
 
-  const queryKey = (dbClient ? `${dbClient.slug} ${dbClient.name}` : id).toLowerCase();
-
-  for (const [key, meta] of Object.entries(BRAND_METRICS_MAP)) {
-    if (queryKey.includes(key)) {
-      return meta;
-    }
-  }
-
-  if (dbClient) {
+  if (dbClient && dbClient.socialConnections && dbClient.socialConnections.length > 0) {
     const platforms = dbClient.socialConnections.map((s: any) => ({
       platform: s.platform,
       followers: s.followers || 5000,
-      reach: (s.followers || 5000) * 1.5,
+      reach: Math.round((s.followers || 5000) * 1.5),
       engagementRate: 5.5,
-      likes: 350,
-      comments: 35,
-      shares: 40
+      likes: Math.round((s.followers || 5000) * 0.08),
+      comments: Math.round((s.followers || 5000) * 0.008),
+      shares: Math.round((s.followers || 5000) * 0.01)
     }));
 
     const totalFollowers = platforms.reduce((a: number, b: any) => a + b.followers, 0) || 5000;
@@ -156,13 +148,29 @@ async function resolveBrandMetrics(id: string): Promise<BrandMetricsMeta> {
       reach: totalReach,
       impressions: Math.round(totalReach * 1.35),
       engagement: 5.8,
-      platforms: platforms.length > 0 ? platforms : [
-        { platform: 'INSTAGRAM', followers: 3200, reach: 5000, engagementRate: 5.8, likes: 280, comments: 30, shares: 25 }
-      ]
+      platforms
     };
   }
 
-  return BRAND_METRICS_MAP.acesco;
+  const brand = findBrandByQuery(id);
+  const platforms = brand.socialConnections.map(s => ({
+    platform: s.platform,
+    followers: s.followers,
+    reach: s.reach,
+    engagementRate: s.engagementRate,
+    likes: Math.round(s.followers * 0.08),
+    comments: Math.round(s.followers * 0.008),
+    shares: Math.round(s.followers * 0.01)
+  }));
+
+  return {
+    name: brand.name,
+    followers: brand.kpis.followers,
+    reach: brand.kpis.reach,
+    impressions: brand.kpis.impressions,
+    engagement: brand.kpis.engagement,
+    platforms
+  };
 }
 
 export async function GET(
