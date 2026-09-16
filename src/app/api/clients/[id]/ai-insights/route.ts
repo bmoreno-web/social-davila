@@ -2,18 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { getSession } from '@/lib/auth/session';
 import { metricoolService } from '@/lib/metricool/client';
-
-const BRAND_METRICS_MAP: Record<string, { name: string; industry: string; blogId: string; userId: string; networks: string[] }> = {
-  acesco: { name: 'Acesco Colombia', industry: 'Construcción e Ingeniería en Acero', blogId: '2930665', userId: '1395490', networks: ['instagram', 'facebook'] },
-  davila: { name: 'Dávila P&M', industry: 'Publicidad, Marketing & Transformación Digital', blogId: '4056236', userId: '1395490', networks: ['instagram', 'linkedin'] },
-  serena: { name: 'Hospital Serena del Mar', industry: 'Salud, Medicina de Alta Complejidad', blogId: '3996019', userId: '1395490', networks: ['facebook'] },
-  zona: { name: 'Zona Franca B/quilla', industry: 'Comercio Exterior, Logística & Parques Industriales', blogId: '4058165', userId: '1395490', networks: ['instagram', 'facebook', 'linkedin'] },
-  zfbaq: { name: 'Zona Franca B/quilla', industry: 'Comercio Exterior, Logística & Parques Industriales', blogId: '4058165', userId: '1395490', networks: ['instagram', 'facebook', 'linkedin'] },
-  verano: { name: 'Eduardo Verano De la Rosa', industry: 'Sector Público, Gestión Departamental & Liderazgo', blogId: '4058776', userId: '1395490', networks: ['tiktok'] },
-  chapman: { name: 'Charles Chapman', industry: 'Derecho Laboral, Consultoría Corporativa', blogId: '4588040', userId: '1395490', networks: ['linkedin'] },
-  realty: { name: 'OG Realty Partners', industry: 'Inversión Inmobiliaria & Bienes Raíces', blogId: '4559324', userId: '1395490', networks: ['instagram'] },
-  og: { name: 'OG Realty Partners', industry: 'Inversión Inmobiliaria & Bienes Raíces', blogId: '4559324', userId: '1395490', networks: ['instagram'] }
-};
+import { findBrandByQuery } from '@/lib/brands';
 
 export async function POST(
   req: NextRequest,
@@ -46,15 +35,14 @@ export async function POST(
       });
     } catch (e) {}
 
-    let brandInfo = BRAND_METRICS_MAP.acesco;
-    const queryKey = (dbClient ? `${dbClient.slug} ${dbClient.name}` : id).toLowerCase();
-
-    for (const [key, info] of Object.entries(BRAND_METRICS_MAP)) {
-      if (queryKey.includes(key)) {
-        brandInfo = info;
-        break;
-      }
-    }
+    const brandFallback = findBrandByQuery(id);
+    let brandInfo = {
+      name: brandFallback.name,
+      industry: brandFallback.industry,
+      blogId: brandFallback.metricoolBlogId,
+      userId: brandFallback.metricoolUserId,
+      networks: brandFallback.networks
+    };
 
     if (dbClient) {
       brandInfo = {
