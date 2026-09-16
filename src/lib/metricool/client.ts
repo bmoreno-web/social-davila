@@ -31,10 +31,11 @@ export class MetricoolService {
         where: { key: 'METRICOOL_API_KEY' }
       });
       const dbSetting: any = await Promise.race([queryPromise, timeoutPromise]);
-      if (dbSetting?.value && dbSetting.value.trim().length > 0) {
-        this.cachedApiKey = dbSetting.value.trim();
+      if (dbSetting?.value && typeof dbSetting.value === 'string' && dbSetting.value.trim().length > 0) {
+        const val = dbSetting.value.trim();
+        this.cachedApiKey = val;
         this.lastApiKeyCheck = now;
-        return this.cachedApiKey;
+        return val;
       }
     } catch (e) {}
     this.cachedApiKey = this.apiKey;
