@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
+import { findBrandByQuery } from '@/lib/brands';
 
 const DEFAULT_BRANDS: Record<string, any> = {
   'cmtag1oha0000t0g80a05ym3q': {
@@ -392,15 +393,22 @@ export async function GET(
     }
 
     if (!client) {
-      const lower = id.toLowerCase();
-      client = DEFAULT_BRANDS[id] ||
-        (lower.includes('davila') ? DEFAULT_BRANDS['cmtag1on80003t0g8l4a3cliz'] :
-         lower.includes('serena') ? DEFAULT_BRANDS['cmtag1ow70008t0g8f2fgh1yd'] :
-         lower.includes('zona') || lower.includes('zfbaq') ? DEFAULT_BRANDS['cmtag1oyx000at0g8h2fuyif8'] :
-         lower.includes('verano') ? DEFAULT_BRANDS['cmtag1p0z000ct0g8w9h3k2lm'] :
-         lower.includes('chapman') ? DEFAULT_BRANDS['cmtag1p4a000et0g8gbyk9m1m'] :
-         lower.includes('og') || lower.includes('realty') ? DEFAULT_BRANDS['cmtag1p7q000gt0g8k86l2mfr'] :
-         DEFAULT_BRANDS['cmtag1oha0000t0g80a05ym3q']);
+      const foundBrand = findBrandByQuery(id);
+      client = DEFAULT_BRANDS[id] || DEFAULT_BRANDS[foundBrand.id] || {
+        id: foundBrand.id,
+        name: foundBrand.name,
+        slug: foundBrand.slug,
+        industry: foundBrand.industry,
+        logo: foundBrand.logo,
+        metricoolBlogId: foundBrand.metricoolBlogId,
+        metricoolUserId: foundBrand.metricoolUserId,
+        contactName: foundBrand.contactName,
+        contactEmail: foundBrand.contactEmail,
+        status: 'ACTIVE',
+        socialConnections: foundBrand.socialConnections,
+        reports: [],
+        recommendations: []
+      };
     } else {
       // If DB client has empty recommendations, attach brand specific ones
       const searchKey = `${client.slug} ${client.name}`.toLowerCase();
@@ -418,7 +426,8 @@ export async function GET(
 
     return NextResponse.json({ client });
   } catch (error: any) {
-    const fallbackClient = DEFAULT_BRANDS['cmtag1oha0000t0g80a05ym3q'];
+    const fallbackBrand = findBrandByQuery(id);
+    const fallbackClient = DEFAULT_BRANDS[fallbackBrand.id] || DEFAULT_BRANDS['cmtag1oha0000t0g80a05ym3q'];
     return NextResponse.json({ client: fallbackClient });
   }
 }
