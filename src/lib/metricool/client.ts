@@ -12,20 +12,33 @@ export class MetricoolService {
   private apiKey: string;
   private baseUrl: string;
 
+  private cachedApiKey: string | null = null;
+  private lastApiKeyCheck: number = 0;
+
   constructor() {
     this.apiKey = process.env.METRICOOL_API_KEY || 'VQFUFHVQRZQFBPCBXGFFNTFIQYSVJWNFPZFSJDOIOXJXHBXRSOFJQEABULFCBPUI';
     this.baseUrl = (process.env.METRICOOL_API_BASE_URL || 'https://app.metricool.com/api').replace(/\/$/, '');
   }
 
   private async getEffectiveApiKey(): Promise<string> {
+    const now = Date.now();
+    if (this.cachedApiKey && now - this.lastApiKeyCheck < 300000) {
+      return this.cachedApiKey;
+    }
     try {
-      const dbSetting = await prisma.systemSetting.findUnique({
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 500));
+      const queryPromise = prisma.systemSetting.findUnique({
         where: { key: 'METRICOOL_API_KEY' }
       });
+      const dbSetting: any = await Promise.race([queryPromise, timeoutPromise]);
       if (dbSetting?.value && dbSetting.value.trim().length > 0) {
-        return dbSetting.value.trim();
+        this.cachedApiKey = dbSetting.value.trim();
+        this.lastApiKeyCheck = now;
+        return this.cachedApiKey;
       }
     } catch (e) {}
+    this.cachedApiKey = this.apiKey;
+    this.lastApiKeyCheck = now;
     return this.apiKey;
   }
 
